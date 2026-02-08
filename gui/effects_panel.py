@@ -21,6 +21,7 @@ class EffectButton(QWidget):
     clicked = pyqtSignal()
 
     def __init__(self, letter, color, name, eid, short_desc="", preview_path=None, parent=None):
+        """Initialise le widget EffectButton."""
         super().__init__(parent)
         self._eid = eid
         self._preview_path = preview_path
@@ -65,10 +66,12 @@ class EffectButton(QWidget):
         lo.addWidget(self._prev_btn)
 
     def mousePressEvent(self, e):
+        """Clic gauche emet le signal clicked avec le nom du preset."""
         if e.button() == Qt.MouseButton.LeftButton:
             self.clicked.emit()
 
     def enterEvent(self, e):
+        """Active l etat hover (fond colore + barre accent)."""
         self._hovered = True
         self.update()
         if self._preview_path:
@@ -76,12 +79,14 @@ class EffectButton(QWidget):
         super().enterEvent(e)
 
     def leaveEvent(self, e):
+        """Desactive l etat hover."""
         self._hovered = False
         self.update()
         self._prev_btn.setVisible(False)
         super().leaveEvent(e)
 
     def paintEvent(self, e):
+        """Dessine le fond hover colore et la barre d accent a gauche."""
         if self._hovered:
             p = QPainter(self)
             p.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -98,6 +103,7 @@ class EffectButton(QWidget):
         super().paintEvent(e)
 
     def _on_preview(self):
+        """Lance la preview audio d un effet."""
         if self._preview_path:
             if preview_player.is_playing():
                 preview_player.stop_preview()
@@ -109,6 +115,7 @@ class EffectButton(QWidget):
 
 class CollapsibleSection(QWidget):
     def __init__(self, title, start_expanded=True, parent=None):
+        """Initialise le widget CollapsibleSection."""
         super().__init__(parent)
         self._expanded = start_expanded
         self._count = 0
@@ -138,16 +145,19 @@ class CollapsibleSection(QWidget):
         lo.addWidget(self._content)
 
     def _update_header(self):
+        """Met a jour le texte du header avec fleche et compteur."""
         arrow = "\u25be" if self._expanded else "\u25b8"
         cnt = f"  ({self._count})" if self._count > 0 else ""
         self._header.setText(f"{arrow}  {self._title}{cnt}")
 
     def _toggle(self):
+        """Bascule l affichage du contenu de la section."""
         self._expanded = not self._expanded
         self._content.setVisible(self._expanded)
         self._update_header()
 
     def add_widget(self, w):
+        """Ajoute un widget dans la section et incremente le compteur."""
         self._clo.addWidget(w)
         self._count += 1
         self._update_header()
@@ -170,6 +180,7 @@ class PresetItem(QWidget):
     clicked = pyqtSignal(str)
 
     def __init__(self, name, desc, tags=None, parent=None):
+        """Initialise le widget PresetItem."""
         super().__init__(parent)
         self._name = name
         self._hovered = False
@@ -197,16 +208,20 @@ class PresetItem(QWidget):
         lo.addWidget(lbl, stretch=1)
 
     def mousePressEvent(self, e):
+        """Clic gauche emet le signal clicked avec le nom du preset."""
         if e.button() == Qt.MouseButton.LeftButton:
             self.clicked.emit(self._name)
 
     def enterEvent(self, e):
+        """Active l etat hover (fond colore + barre accent)."""
         self._hovered = True; self.update(); super().enterEvent(e)
 
     def leaveEvent(self, e):
+        """Desactive l etat hover."""
         self._hovered = False; self.update(); super().leaveEvent(e)
 
     def paintEvent(self, e):
+        """Dessine le fond hover colore et la barre d accent a gauche."""
         if self._hovered:
             p = QPainter(self); p.setRenderHint(QPainter.RenderHint.Antialiasing)
             p.setPen(Qt.PenStyle.NoPen)
@@ -230,6 +245,7 @@ class EffectsPanel(QWidget):
     import_clicked = pyqtSignal()
 
     def __init__(self, parent=None):
+        """Initialise le widget EffectsPanel."""
         super().__init__(parent)
         self.setFixedWidth(220)
         self._plugins = {}
@@ -318,15 +334,18 @@ class EffectsPanel(QWidget):
         self.reload_plugins()
 
     def reload_plugins(self):
+        """Recharge la liste des plugins apres import."""
         self._plugins = load_plugins(force_reload=True)
         self._rebuild()
 
     def set_presets(self, tag_map, all_presets):
+        """Met a jour la liste des presets affichee."""
         self._tag_presets = tag_map
         self._all_presets = all_presets
         self._rebuild()
 
     def _tab(self, text, active):
+        """Cree un bouton d onglet (Effets / Presets)."""
         b = QPushButton(text)
         b.setFixedSize(28, 22)
         b.setCheckable(True)
@@ -340,6 +359,7 @@ class EffectsPanel(QWidget):
         return b
 
     def _sbtn(self, text):
+        """Cree un petit bouton pour la section presets."""
         b = QPushButton(text)
         b.setFixedHeight(24)
         b.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
@@ -351,18 +371,22 @@ class EffectsPanel(QWidget):
         return b
 
     def _toggle_fx(self):
+        """Bascule sur l onglet Effets."""
         self._show_effects = self._btn_fx.isChecked()
         self._rebuild()
 
     def _toggle_pr(self):
+        """Bascule sur l onglet Presets."""
         self._show_presets = self._btn_pr.isChecked()
         self._rebuild()
 
     def _on_search(self, text):
+        """Filtre les effets selon le texte de recherche."""
         self._search_text = text.strip().lower()
         self._rebuild()
 
     def _rebuild(self):
+        """Reconstruit la liste des effets apres changement de langue."""
         container = QWidget()
         cl = QVBoxLayout(container)
         cl.setContentsMargins(4, 4, 4, 4)
@@ -450,6 +474,7 @@ class EffectsPanel(QWidget):
         self._scroll.setWidget(container)
 
     def _slabel(self, text):
+        """Cree un label de section."""
         l = QLabel(text)
         l.setStyleSheet(
             f"color: {COLORS['text_dim']}; font-size: 9px; "
@@ -458,6 +483,7 @@ class EffectsPanel(QWidget):
         return l
 
     def _sep(self):
+        """Cree un separateur horizontal."""
         s = QFrame()
         s.setFrameShape(QFrame.Shape.HLine)
         s.setStyleSheet(f"color: {COLORS['border']};")

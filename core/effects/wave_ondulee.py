@@ -5,6 +5,7 @@ from core.effects.utils import apply_micro_fade
 
 def wave_ondulee(audio_data, start, end, sr=44100,
                  speed=3.0, pitch_depth=0.4, vol_depth=0.3, stereo_offset=True):
+    """Modulation de pitch par LFO sinusoidal."""
     result = audio_data.copy()
     seg = result[start:end].astype(np.float64)
     n = len(seg)

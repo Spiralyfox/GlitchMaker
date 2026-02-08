@@ -25,6 +25,7 @@ class Plugin:
 
     def get_name(self, lang=None):
         # User plugins use special prefix
+        """Retourne le nom traduit du plugin."""
         if self._name_key.startswith("_user_."):
             pid = self._name_key[7:]
             from plugins.user_loader import get_user_translation
@@ -53,6 +54,7 @@ class Plugin:
         return t(f"cat.{self._name_key}.short")
 
     def get_preview_path(self):
+        """Retourne le chemin du fichier de preview pour un plugin."""
         if not self._preview_file:
             return None
         base = os.path.dirname(os.path.abspath(__file__))
@@ -65,14 +67,17 @@ class Plugin:
 # ═══ Wrappers (all accept sr= and **kw to absorb extra params) ═══
 
 def _w_reverse(audio_data, start, end, sr=44100, **kw):
+    """Wrapper : applique l effet Reverse."""
     from core.effects.reverse import reverse
     return reverse(audio_data, start, end)
 
 def _w_volume(audio_data, start, end, sr=44100, **kw):
+    """Wrapper : applique l effet Volume."""
     from core.effects.volume import volume
     return volume(audio_data, start, end, gain_pct=kw.get("gain_pct", 100))
 
 def _w_filter(audio_data, start, end, sr=44100, **kw):
+    """Wrapper : applique l effet Filter."""
     from core.effects.filter import resonant_filter
     return resonant_filter(audio_data, start, end,
                            filter_type=kw.get("filter_type", "lowpass"),
@@ -80,11 +85,13 @@ def _w_filter(audio_data, start, end, sr=44100, **kw):
                            resonance=kw.get("resonance", 1.0), sr=sr)
 
 def _w_pan(audio_data, start, end, sr=44100, **kw):
+    """Wrapper : applique l effet Pan."""
     from core.effects.pan import pan_stereo
     return pan_stereo(audio_data, start, end,
                       pan=kw.get("pan", 0.0), mono=kw.get("mono", False))
 
 def _w_pitch_shift(audio_data, start, end, sr=44100, **kw):
+    """Wrapper : applique l effet Pitch Shift."""
     from core.effects.pitch_shift import pitch_shift, pitch_shift_simple
     if kw.get("simple", False):
         return pitch_shift_simple(audio_data, start, end,
@@ -93,10 +100,12 @@ def _w_pitch_shift(audio_data, start, end, sr=44100, **kw):
                        semitones=kw.get("semitones", 0), sr=sr)
 
 def _w_time_stretch(audio_data, start, end, sr=44100, **kw):
+    """Wrapper : applique l effet Time Stretch."""
     from core.effects.time_stretch import time_stretch
     return time_stretch(audio_data, start, end, factor=kw.get("factor", 1.0))
 
 def _w_tape_stop(audio_data, start, end, sr=44100, **kw):
+    """Wrapper : applique l effet Tape Stop."""
     from core.effects.tape_stop import tape_stop
     duration_ms = kw.get("duration_ms", 1500)
     seg_len = end - start
@@ -104,6 +113,7 @@ def _w_tape_stop(audio_data, start, end, sr=44100, **kw):
     return tape_stop(audio_data, start, end, duration_pct=duration_pct, sr=sr)
 
 def _w_saturation(audio_data, start, end, sr=44100, **kw):
+    """Wrapper : applique l effet Saturation."""
     from core.effects.saturation import hard_clip, soft_clip, overdrive
     sat_type = kw.get("type", "soft")
     drive = kw.get("drive", 3.0)
@@ -115,6 +125,7 @@ def _w_saturation(audio_data, start, end, sr=44100, **kw):
     return soft_clip(audio_data, start, end, threshold=threshold)
 
 def _w_distortion(audio_data, start, end, sr=44100, **kw):
+    """Wrapper : applique l effet Distortion."""
     from core.effects.distortion import distortion
     return distortion(audio_data, start, end,
                       drive=kw.get("drive", 5.0),
@@ -122,12 +133,14 @@ def _w_distortion(audio_data, start, end, sr=44100, **kw):
                       mode=kw.get("mode", "tube"))
 
 def _w_bitcrusher(audio_data, start, end, sr=44100, **kw):
+    """Wrapper : applique l effet Bitcrusher."""
     from core.effects.bitcrusher import bitcrush
     return bitcrush(audio_data, start, end,
                     bit_depth=kw.get("bit_depth", 8),
                     downsample=kw.get("downsample", 1))
 
 def _w_chorus(audio_data, start, end, sr=44100, **kw):
+    """Wrapper : applique l effet Chorus."""
     from core.effects.chorus import chorus
     return chorus(audio_data, start, end,
                   depth_ms=kw.get("depth_ms", 3.0),
@@ -136,6 +149,7 @@ def _w_chorus(audio_data, start, end, sr=44100, **kw):
                   voices=kw.get("voices", 2), sr=sr)
 
 def _w_phaser(audio_data, start, end, sr=44100, **kw):
+    """Wrapper : applique l effet Phaser."""
     from core.effects.phaser import phaser
     return phaser(audio_data, start, end,
                   rate_hz=kw.get("rate_hz", 0.5),
@@ -144,6 +158,7 @@ def _w_phaser(audio_data, start, end, sr=44100, **kw):
                   mix=kw.get("mix", 0.5), sr=sr)
 
 def _w_tremolo(audio_data, start, end, sr=44100, **kw):
+    """Wrapper : applique l effet Tremolo."""
     from core.effects.tremolo import tremolo
     return tremolo(audio_data, start, end,
                    rate_hz=kw.get("rate_hz", 5.0),
@@ -151,12 +166,14 @@ def _w_tremolo(audio_data, start, end, sr=44100, **kw):
                    shape=kw.get("shape", "sine"), sr=sr)
 
 def _w_ring_mod(audio_data, start, end, sr=44100, **kw):
+    """Wrapper : applique l effet Ring Modulator."""
     from core.effects.ring_mod import ring_mod
     return ring_mod(audio_data, start, end,
                     freq=kw.get("frequency", 440),
                     mix=kw.get("mix", 0.5), sr=sr)
 
 def _w_delay(audio_data, start, end, sr=44100, **kw):
+    """Wrapper : applique l effet Delay."""
     from core.effects.delay import delay
     return delay(audio_data, start, end,
                  delay_ms=kw.get("delay_ms", 250),
@@ -164,16 +181,19 @@ def _w_delay(audio_data, start, end, sr=44100, **kw):
                  mix=kw.get("mix", 0.5), sr=sr)
 
 def _w_vinyl(audio_data, start, end, sr=44100, **kw):
+    """Wrapper : applique l effet Vinyl Crackle."""
     from core.effects.vinyl import vinyl
     amount = kw.get("amount", 0.5)
     return vinyl(audio_data, start, end,
                  crackle=amount, noise=amount * 0.5, wow=amount * 0.3, sr=sr)
 
 def _w_ott(audio_data, start, end, sr=44100, **kw):
+    """Wrapper : applique l effet OTT Compression."""
     from core.effects.ott import ott
     return ott(audio_data, start, end, depth=kw.get("depth", 0.5), sr=sr)
 
 def _w_stutter(audio_data, start, end, sr=44100, **kw):
+    """Wrapper : applique l effet Stutter."""
     from core.effects.stutter import stutter
     return stutter(audio_data, start, end,
                    repeats=kw.get("repeats", 4),
@@ -181,6 +201,7 @@ def _w_stutter(audio_data, start, end, sr=44100, **kw):
                    stutter_mode=kw.get("stutter_mode", "normal"))
 
 def _w_granular(audio_data, start, end, sr=44100, **kw):
+    """Wrapper : applique l effet Granular."""
     from core.effects.granular import granular
     return granular(audio_data, start, end,
                     grain_size_ms=kw.get("grain_ms", 50),
@@ -188,21 +209,25 @@ def _w_granular(audio_data, start, end, sr=44100, **kw):
                     randomize=kw.get("chaos", 0.5), sr=sr)
 
 def _w_shuffle(audio_data, start, end, sr=44100, **kw):
+    """Wrapper : applique l effet Shuffle."""
     from core.effects.shuffle import shuffle
     return shuffle(audio_data, start, end, slices=kw.get("num_slices", 8))
 
 def _w_buffer_freeze(audio_data, start, end, sr=44100, **kw):
+    """Wrapper : applique l effet Buffer Freeze."""
     from core.effects.buffer_freeze import buffer_freeze
     return buffer_freeze(audio_data, start, end,
                          grain_ms=kw.get("buffer_ms", 50), sr=sr)
 
 def _w_datamosh(audio_data, start, end, sr=44100, **kw):
+    """Wrapper : applique l effet Datamosh."""
     from core.effects.datamosh import datamosh
     return datamosh(audio_data, start, end,
                     intensity=kw.get("chaos", 0.5),
                     block_size=kw.get("block_size", 512))
 
 def _w_wave_ondulee(audio_data, start, end, sr=44100, **kw):
+    """Wrapper : applique l effet Wave Ondulee."""
     from core.effects.wave_ondulee import wave_ondulee
     return wave_ondulee(audio_data, start, end, sr=sr,
                         speed=kw.get("speed", 3.0),
@@ -211,6 +236,7 @@ def _w_wave_ondulee(audio_data, start, end, sr=44100, **kw):
                         stereo_offset=kw.get("stereo_offset", True))
 
 def _w_autotune(audio_data, start, end, sr=44100, **kw):
+    """Wrapper : applique l effet Autotune."""
     from core.effects.autotune import autotune
     return autotune(audio_data, start, end, sr=sr,
                     speed=kw.get("speed", 0.8),
@@ -219,6 +245,7 @@ def _w_autotune(audio_data, start, end, sr=44100, **kw):
                     mix=kw.get("mix", 1.0))
 
 def _w_robot(audio_data, start, end, sr=44100, **kw):
+    """Wrapper : applique l effet Robotic Voice."""
     from core.effects.robot import robot
     return robot(audio_data, start, end, sr=sr,
                  grain_ms=kw.get("grain_ms", 8),
@@ -229,6 +256,7 @@ def _w_robot(audio_data, start, end, sr=44100, **kw):
                  pitch_hz=kw.get("pitch_hz", 150))
 
 def _w_vocal_chop(audio_data, start, end, sr=44100, **kw):
+    """Wrapper : applique l effet Vocal Chop."""
     from core.effects.vocal_chop import vocal_chop
     return vocal_chop(audio_data, start, end, sr=sr,
                       bpm=kw.get("bpm", 140),
@@ -238,6 +266,7 @@ def _w_vocal_chop(audio_data, start, end, sr=44100, **kw):
                       reverse_hits=kw.get("reverse_hits", False))
 
 def _w_hyper(audio_data, start, end, sr=44100, **kw):
+    """Wrapper : applique l effet Hyper."""
     from core.effects.hyper import hyper
     return hyper(audio_data, start, end, sr=sr,
                  intensity=kw.get("intensity", 0.6),
@@ -247,6 +276,7 @@ def _w_hyper(audio_data, start, end, sr=44100, **kw):
                  width=kw.get("width", 0.5))
 
 def _w_tape_glitch(audio_data, start, end, sr=44100, **kw):
+    """Wrapper : applique l effet Tape Glitch."""
     from core.effects.tape_glitch import tape_glitch
     return tape_glitch(audio_data, start, end, sr=sr,
                        glitch_rate=kw.get("glitch_rate", 0.4),
@@ -266,6 +296,7 @@ SECTION_ORDER = [
 
 
 def _define_plugins():
+    """Definit les 28 plugins builtin avec leurs wrappers et dialogues."""
     from gui.effect_dialogs import (
         ReverseDialog, VolumeDialog, FilterDialog, PanDialog,
         PitchShiftDialog, TimeStretchDialog, TapeStopDialog,
@@ -317,6 +348,7 @@ def _define_plugins():
 _plugins_cache = None
 
 def load_plugins(force_reload=False):
+    """Charge tous les plugins (builtin + user) et retourne la liste."""
     global _plugins_cache
     if _plugins_cache is None or force_reload:
         _plugins_cache = _define_plugins()
@@ -331,6 +363,7 @@ def load_plugins(force_reload=False):
 
 
 def plugins_grouped(plugins, lang=None):
+    """Retourne les plugins groupes par categorie pour le menu."""
     groups = {}
     for pid, plugin in plugins.items():
         groups.setdefault(plugin.section, []).append(plugin)

@@ -4,6 +4,7 @@ import numpy as np
 def tremolo(audio_data: np.ndarray, start: int, end: int,
             rate_hz: float = 5.0, depth: float = 0.7,
             shape: str = "sine", sr: int = 44100) -> np.ndarray:
+    """Modulation d amplitude periodique."""
     out = audio_data.copy()
     seg = out[start:end].astype(np.float64)
     n = len(seg)

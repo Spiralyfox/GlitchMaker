@@ -20,6 +20,7 @@ class TimelineWidget(QWidget):
     seek_requested = pyqtSignal(int)  # sample position
 
     def __init__(self, timeline=None, parent=None):
+        """Initialise le widget timeline avec la reference au modele Timeline."""
         super().__init__(parent)
         self.timeline = timeline
         self.sample_rate = 44100
@@ -43,21 +44,25 @@ class TimelineWidget(QWidget):
     # ── Setters ──
 
     def set_playhead(self, sample_pos, sr):
+        """Met a jour la position du playhead sur la timeline."""
         self.sample_rate = sr
         self._playhead_sample = sample_pos
         self.update()
 
     def set_anchor(self, sample_pos):
+        """Definit la position du curseur ancre."""
         self._anchor_sample = sample_pos
         self.update()
 
     def clear_anchor(self):
+        """Efface le curseur ancre."""
         self._anchor_sample = None
         self.update()
 
     # ── Coordinate helpers ──
 
     def _x_to_sample(self, x):
+        """Convertit pixel X en position sample sur la timeline."""
         if not self.timeline:
             return 0
         total = self.timeline.total_duration_samples
@@ -66,6 +71,7 @@ class TimelineWidget(QWidget):
         return int(max(0, min(x / self.width(), 1.0)) * total)
 
     def _sample_to_x(self, sample_pos):
+        """Convertit position sample en pixel X."""
         if not self.timeline:
             return 0
         total = self.timeline.total_duration_samples
@@ -74,6 +80,7 @@ class TimelineWidget(QWidget):
         return int(sample_pos / total * self.width())
 
     def _clip_at(self, x):
+        """Retourne le clip a la position sample donnee (ou None)."""
         if not self.timeline or not self.timeline.clips: return None
         total = self.timeline.total_duration_samples
         if total == 0: return None
@@ -102,6 +109,7 @@ class TimelineWidget(QWidget):
     # ── Mouse events ──
 
     def mousePressEvent(self, e):
+        """Clic gauche = select clip, clic droit = menu contextuel."""
         if e.button() != Qt.MouseButton.LeftButton:
             return
         self._press_x = int(e.position().x())
@@ -137,6 +145,7 @@ class TimelineWidget(QWidget):
         self.update()
 
     def mouseMoveEvent(self, e):
+        """Drag d un clip sur la timeline."""
         mx = int(e.position().x())
 
         # Anchor dragging
@@ -162,6 +171,7 @@ class TimelineWidget(QWidget):
 
     def mouseReleaseEvent(self, e):
         # Clip reorder
+        """Fin du drag — repositionne le clip."""
         if self._dragging_clip and self._drag_src and self.timeline:
             try:
                 target = self._clip_at(int(e.position().x()))
@@ -197,6 +207,7 @@ class TimelineWidget(QWidget):
     # ── Context menu ──
 
     def _ctx_menu(self, pos):
+        """Affiche le menu contextuel d un clip (split, delete, fade, etc)."""
         clip = self._clip_at(pos.x())
         if not clip: return
 
@@ -229,6 +240,7 @@ class TimelineWidget(QWidget):
     # ── Paint ──
 
     def paintEvent(self, e):
+        """Dessine les clips, le playhead et le curseur."""
         p = QPainter(self); p.setRenderHint(QPainter.RenderHint.Antialiasing)
         w, h = self.width(), self.height()
         p.fillRect(0, 0, w, h, QColor(COLORS['bg_medium']))

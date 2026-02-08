@@ -23,6 +23,7 @@ from PyQt6.QtGui import QFont
 from gui.main_window import MainWindow
 
 def main():
+    """Point d entree — initialise PyQt6, charge la langue, lance MainWindow."""
     app = QApplication(sys.argv)
     app.setFont(QFont("Segoe UI", 10))
     app.setStyle("Fusion")

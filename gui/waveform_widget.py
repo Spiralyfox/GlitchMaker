@@ -8,6 +8,7 @@ from utils.translator import t
 
 
 def _parse_color(hex_str):
+    """Convertit un code hex (#RRGGBB) en tuple (R,G,B)."""
     h = hex_str.lstrip('#')
     return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
 
@@ -19,6 +20,7 @@ class WaveformWidget(QWidget):
     zoom_changed = pyqtSignal(float, float)  # (zoom, offset) — for external scrollbar
 
     def __init__(self, parent=None):
+        """Initialise le widget waveform avec zoom, grille, selection."""
         super().__init__(parent)
         self.audio_data: np.ndarray | None = None
         self.sample_rate = 44100
@@ -55,6 +57,7 @@ class WaveformWidget(QWidget):
         self.setCursor(Qt.CursorShape.CrossCursor)
 
     def set_grid(self, enabled, bpm=120.0, beats=4, subdiv=1, offset_ms=0.0):
+        """Configure la grille de temps (activer, BPM, beats, subdivisions)."""
         self._grid_enabled = enabled
         self._grid_bpm = max(20, bpm)
         self._grid_beats_per_bar = max(1, beats)
@@ -72,28 +75,34 @@ class WaveformWidget(QWidget):
             self.update()
 
     def set_audio(self, data, sr):
+        """Charge les donnees audio a afficher et reinitialise le zoom."""
         self.audio_data = data
         self.sample_rate = sr
         self._cache = None
         self.update()
 
     def set_playhead(self, pos):
+        """Met a jour la position du playhead (ligne verte)."""
         self._playhead = pos
         self.update()
 
     def set_selection(self, s, e):
+        """Definit la zone de selection (debut, fin en samples)."""
         self.selection_start, self.selection_end = s, e
         self.update()
 
     def set_clip_highlight(self, s, e):
+        """Met en surbrillance un clip (bordure verte pointillee)."""
         self._clip_hl_start, self._clip_hl_end = s, e
         self.update()
 
     def set_anchor(self, pos):
+        """Definit la position du curseur ancre (ligne bleue)."""
         self._anchor = pos
         self.update()
 
     def clear_all(self):
+        """Reinitialise la waveform (supprime audio, selection, zoom)."""
         self.selection_start = self.selection_end = None
         self._anchor = None
         self._clip_hl_start = self._clip_hl_end = None
@@ -140,6 +149,7 @@ class WaveformWidget(QWidget):
     # ── Mouse events ──
 
     def mousePressEvent(self, e):
+        """Debut de selection ou positionnement du curseur."""
         if e.button() == Qt.MouseButton.LeftButton and self.audio_data is not None:
             self._dragging = True
             pos = self._pos_to_sample(e.position().x())
@@ -151,11 +161,13 @@ class WaveformWidget(QWidget):
             self.update()
 
     def mouseMoveEvent(self, e):
+        """Mise a jour de la selection pendant le drag."""
         if self._dragging and self.audio_data is not None:
             self.selection_end = self._pos_to_sample(e.position().x())
             self.update()
 
     def mouseReleaseEvent(self, e):
+        """Fin du drag — emet selection_changed ou position_clicked."""
         if self._dragging:
             self._dragging = False
             if self.selection_start is not None and self.selection_end is not None:
@@ -206,6 +218,7 @@ class WaveformWidget(QWidget):
     # ── Paint ──
 
     def paintEvent(self, e):
+        """Dessine la waveform, grille, selection, playhead, curseur."""
         p = QPainter(self)
         w, h = self.width(), self.height()
         p.fillRect(0, 0, w, h, QColor(COLORS['bg_dark']))
@@ -311,15 +324,11 @@ class WaveformWidget(QWidget):
             p.setPen(QPen(QColor(COLORS['playhead']), 2))
             p.drawLine(px, 0, px, h)
 
-        # Zoom indicator (bottom-right)
+        # Zoom level indicator (bottom-right text)
         if self._zoom > 1.01:
             p.setPen(QColor(COLORS['text_dim']))
             p.setFont(QFont("Consolas", 8))
             p.drawText(w - 60, h - 4, f"x{self._zoom:.1f}")
-            # Mini scrollbar indicator at bottom
-            bar_w = int(w / self._zoom)
-            bar_x = int(self._offset * w)
-            p.fillRect(bar_x, h - 3, max(bar_w, 4), 3, QColor(COLORS['accent'] + "80"))
 
         p.end()
 
@@ -381,5 +390,6 @@ class WaveformWidget(QWidget):
         return img.copy()
 
     def resizeEvent(self, e):
+        """Invalide le cache waveform quand le widget est redimensionne."""
         self._cache = None
         super().resizeEvent(e)

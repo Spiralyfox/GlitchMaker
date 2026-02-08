@@ -29,6 +29,7 @@ _SS = f"""
 
 
 def _btn(text, bg=COLORS['accent']):
+    """Cree un bouton stylise pour le dialogue."""
     b = QPushButton(text)
     b.setFixedHeight(30)
     b.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -130,9 +131,11 @@ class ImportPluginDialog(QDialog):
 
     @property
     def changed(self):
+        """Retourne True si des plugins ont ete ajoutes/supprimes."""
         return self._changed
 
     def _pick_py(self):
+        """Ouvre un dialogue pour selectionner le fichier .py du plugin."""
         path, _ = QFileDialog.getOpenFileName(
             self, "Select effect .py file", "",
             "Python files (*.py)")
@@ -142,6 +145,7 @@ class ImportPluginDialog(QDialog):
             self._py_label.setStyleSheet(f"color: {COLORS['text']}; font-size: 10px;")
 
     def _pick_json(self):
+        """Ouvre un dialogue pour selectionner le fichier i18n du plugin."""
         path, _ = QFileDialog.getOpenFileName(
             self, "Select translations .json file", "",
             "JSON files (*.json)")
@@ -151,6 +155,7 @@ class ImportPluginDialog(QDialog):
             self._json_label.setStyleSheet(f"color: {COLORS['text']}; font-size: 10px;")
 
     def _install(self):
+        """Installe le plugin dans le dossier user_plugins."""
         if not self._py_path:
             QMessageBox.warning(self, "Import", "Please select a .py file first.")
             return
@@ -175,6 +180,7 @@ class ImportPluginDialog(QDialog):
             QMessageBox.critical(self, "Import Error", f"Failed to install plugin:\n{ex}")
 
     def _remove(self):
+        """Desinstalle un plugin utilisateur."""
         item = self._list.currentItem()
         if not item:
             QMessageBox.warning(self, "Remove", "Select a plugin to remove.")
@@ -194,6 +200,7 @@ class ImportPluginDialog(QDialog):
             self._refresh_list()
 
     def _refresh_list(self):
+        """Rafraichit la liste des plugins installes."""
         self._list.clear()
         from plugins.user_loader import list_installed
         for entry in list_installed():

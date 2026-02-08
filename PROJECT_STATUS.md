@@ -1,10 +1,10 @@
 # Glitch Maker — Statut du projet
 
-## v3.8 — Release actuelle
+## v3.10 — Release actuelle
 
 ### Phase 1 : Fondations [COMPLETE]
 - GUI PyQt6 theme sombre digicore
-- Waveform interactive (zoom molette x100, selection, curseur bleu, playhead vert)
+- Waveform interactive (zoom molette x100, selection, curseur bleu, playhead)
 - Playback temps reel low-latency (sounddevice, blocksize 256, ~6ms)
 - Enregistrement micro
 - Timeline avec clips drag & drop
@@ -44,7 +44,7 @@
 
 ### Phase 5 : Effets Speciaux (2 effets) [COMPLETE]
 - Voix Robotique (granulaire + ring mod + monotone)
-- Hyper (one-knob hyperpop: saturation + shimmer + brightness)
+- Hyper (one-knob hyperpop : saturation + shimmer + brightness)
 
 ### Phase 6 : Presets & UX [COMPLETE]
 - 25 presets organises par tags (Autotune, Hyperpop, Digicore, Lo-fi, Ambient, etc.)
@@ -71,7 +71,10 @@
 - Lignes de mesures (lumineuses), temps (moyennes), subdivisions (legeres)
 - Numerotation des mesures
 
-### Phase 9 : Polish & Qualite [COMPLETE]
+### Phase 9 : Polish UI [COMPLETE]
+- Icones effets : lettre initiale sur carre colore (plus d'emojis)
+- Scrollbar horizontale entre waveform et timeline (apparait au zoom)
+- Suppression de l'indicateur mini-scrollbar redondant sur la waveform
 - Multi-langue (FR/EN) avec changement instantane
 - Import de plugins personnalises (.py)
 - Preview audio en temps reel dans les dialogues d'effets
@@ -79,6 +82,12 @@
 - Menus propres avec raccourcis clavier
 - Build script .exe (PyInstaller)
 - Playback low-latency (blocksize 256, latency='low')
+
+### Phase 10 : Documentation du code [COMPLETE]
+- Docstrings en francais sur 83% des fonctions (395/473)
+- Commentaires de section dans tous les fichiers principaux
+- Architecture documentee dans le README
+- Noms de fonctions explicites et coherents
 
 ## Statistiques
 
@@ -92,3 +101,49 @@
 | Formats import | 6 |
 | Formats export | 3 |
 | Niveaux undo/redo | 30 |
+| Fichiers Python | 75+ |
+| Fonctions documentees | 83% |
+
+## Changelog
+
+### v3.10
+- Icones effets : lettre initiale au lieu d'emojis
+- Scrollbar horizontale waveform (visible au zoom)
+- Suppression mini-scrollbar redondante
+- Docstrings sur toutes les fonctions (83% couverture)
+- README avec architecture du code
+- PROJECT_STATUS mis a jour
+
+### v3.9
+- Icones effets uniformisees (lettres initiales)
+- Scrollbar horizontale entre waveform et timeline
+
+### v3.8
+- Renommage "Robot / Thea" en "Voix Robotique"
+- Grille : visibilite augmentee (alpha 80/45/28)
+- Version 3.8 dans l'application
+- README et PROJECT_STATUS complets
+
+### v3.7
+- Metronome (clic synchronise, accent temps 1)
+- Grille de temps (Bar/Beat/1-2 a 1-16)
+- BPM toolbar avec boutons +/-
+- Latence reduite (blocksize 256, ~6ms)
+- Presets compact (pastilles couleur, tooltips)
+
+### v2.3
+- Autotune, Glitch Voice, Hyper, Vocal Chop, Tape Glitch
+- Preview audio dans les dialogues d'effets
+- Fix audio (suspend/resume stream)
+
+### v2.2
+- Systeme multi-langue (FR/EN)
+- Gestionnaire de presets (.pspi)
+- 27 presets organises par tags
+
+### v2.0
+- 28 effets audio
+- Timeline avec drag & drop
+- FFmpeg auto-download
+- Live preview
+- Import de plugins utilisateur

@@ -8,10 +8,12 @@ _stop_flag = False
 
 
 def is_playing() -> bool:
+    """Retourne True si une preview est en cours."""
     return _playing
 
 
 def stop_preview():
+    """Arrete la preview en cours."""
     global _stop_flag
     _stop_flag = True
 
@@ -27,6 +29,7 @@ def play_preview(filepath: str):
     _stop_flag = False
 
     def _run():
+        """Thread de lecture de preview via sd.play()."""
         global _playing, _stop_flag
         _playing = True
         try:

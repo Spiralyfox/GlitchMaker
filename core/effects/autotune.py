@@ -19,12 +19,14 @@ _SCALES = {
 
 
 def _freq_to_midi(f):
+    """Convertit une frequence Hz en numero de note MIDI."""
     if f <= 0:
         return 0
     return 69 + 12 * np.log2(f / 440.0)
 
 
 def _midi_to_freq(m):
+    """Convertit un numero MIDI en frequence Hz."""
     return 440.0 * 2 ** ((m - 69) / 12.0)
 
 

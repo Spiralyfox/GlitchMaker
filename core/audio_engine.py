@@ -62,6 +62,7 @@ _load_ffmpeg_from_settings()
 
 
 def _find_ffmpeg() -> str | None:
+    """Cherche FFmpeg dans le PATH et les emplacements courants."""
     global _ffmpeg_cache, _ffmpeg_searched
     if _ffmpeg_searched:
         return _ffmpeg_cache
@@ -157,6 +158,7 @@ def _find_ffmpeg() -> str | None:
 
 
 def _sync_pydub_ffmpeg():
+    """Configure pydub pour utiliser FFmpeg si disponible."""
     ffmpeg = _find_ffmpeg()
     if ffmpeg:
         try:
@@ -326,6 +328,7 @@ def _cleanup(path):
 # ═══════════════════════════════════════
 
 def load_audio(filepath: str) -> tuple[np.ndarray, int]:
+    """Charge un fichier audio et retourne (numpy_array, sample_rate)."""
     if not os.path.isfile(filepath):
         raise FileNotFoundError(f"File not found: {filepath}")
     ext = os.path.splitext(filepath)[1].lower()
@@ -412,6 +415,7 @@ def load_audio(filepath: str) -> tuple[np.ndarray, int]:
 # ═══════════════════════════════════════
 
 def export_wav(data: np.ndarray, sr: int, filepath: str):
+    """Exporte un tableau numpy en fichier WAV."""
     sf.write(filepath, data, sr, subtype="PCM_16")
 
 
@@ -440,6 +444,7 @@ def _export_mp3_lameenc(data: np.ndarray, sr: int, filepath: str):
 
 
 def export_audio(data: np.ndarray, sr: int, filepath: str, fmt: str = "wav"):
+    """Exporte en MP3 ou FLAC via FFmpeg/pydub."""
     if fmt == "wav":
         export_wav(data, sr, filepath)
         return
@@ -530,6 +535,7 @@ def export_audio(data: np.ndarray, sr: int, filepath: str, fmt: str = "wav"):
 # ═══════════════════════════════════════
 
 def _ensure_stereo(data: np.ndarray) -> np.ndarray:
+    """Convertit mono en stereo si necessaire."""
     if data.ndim == 1:
         return np.column_stack([data, data]).astype(np.float32)
     if data.shape[1] == 1:
@@ -541,20 +547,24 @@ def _ensure_stereo(data: np.ndarray) -> np.ndarray:
 
 
 def ensure_stereo(data: np.ndarray) -> np.ndarray:
+    """Convertit mono en stereo si necessaire (public)."""
     return _ensure_stereo(data)
 
 
 def audio_to_mono(data: np.ndarray) -> np.ndarray:
+    """Convertit un signal stereo en mono (moyenne des canaux)."""
     if data.ndim == 1:
         return data.astype(np.float32)
     return np.mean(data, axis=1).astype(np.float32)
 
 
 def get_duration(data: np.ndarray, sr: int) -> float:
+    """Retourne la duree en secondes d un tableau audio."""
     return len(data) / sr
 
 
 def format_time(seconds: float) -> str:
+    """Formate une duree en secondes vers MM:SS.cc."""
     m = int(seconds // 60)
     s = seconds % 60
     return f"{m:02d}:{s:05.2f}"

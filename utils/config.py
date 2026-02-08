@@ -2,7 +2,7 @@
 import os, json
 
 APP_NAME = "Glitch Maker"
-APP_VERSION = "3.9"
+APP_VERSION = "3.10"
 WINDOW_MIN_WIDTH = 1050
 WINDOW_MIN_HEIGHT = 650
 RECORDING_SAMPLE_RATE = 44100
@@ -34,6 +34,7 @@ COLORS = {
 _SETTINGS_PATH = os.path.join(os.path.expanduser("~"), ".glitchmaker_settings.json")
 
 def load_settings() -> dict:
+    """Charge les settings depuis settings.json."""
     try:
         with open(_SETTINGS_PATH, "r", encoding="utf-8") as f:
             return json.load(f)
@@ -41,6 +42,7 @@ def load_settings() -> dict:
         return {}
 
 def save_settings(s: dict):
+    """Sauvegarde les settings dans settings.json."""
     try:
         with open(_SETTINGS_PATH, "w", encoding="utf-8") as f:
             json.dump(s, f, indent=2)

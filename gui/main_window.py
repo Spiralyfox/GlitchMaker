@@ -1,5 +1,5 @@
 """
-Main window — Glitch Maker v3.9
+Main window — Glitch Maker v3.10
 Plugin-based effects, global effects system, metronome, beat grid.
 """
 
@@ -55,6 +55,7 @@ class _EffectWorker(QThread):
         self._kwargs = kwargs
 
     def run(self):
+        """Telecharge FFmpeg en arriere-plan et emet le signal status."""
         try:
             result = self._fn(*self._args, **self._kwargs)
             self.done.emit(result)
@@ -83,6 +84,7 @@ class _FFmpegDownloadThread(QThread):
     status = Signal(str)
 
     def run(self):
+        """Telecharge FFmpeg en arriere-plan et emet le signal status."""
         try:
             self.status.emit("Downloading FFmpeg...")
             download_ffmpeg(progress_cb=lambda msg: self.status.emit(msg))
@@ -158,6 +160,7 @@ class MainWindow(QMainWindow):
     # ══════ UI Build ══════
 
     def _build_ui(self):
+        """Construit toute l interface : sidebar effets, toolbar, waveform, timeline, transport."""
         c = QWidget(); self.setCentralWidget(c)
         mlo = QHBoxLayout(c); mlo.setContentsMargins(0, 0, 0, 0); mlo.setSpacing(0)
 
@@ -281,6 +284,7 @@ class MainWindow(QMainWindow):
         mlo.addWidget(right, stretch=1)
 
     def _make_toolbar_btn(self, text):
+        """Cree un bouton stylise pour la toolbar (undo/redo etc)."""
         b = QPushButton(text); b.setFixedHeight(26)
         b.setCursor(Qt.CursorShape.PointingHandCursor)
         b.setStyleSheet(f"""
@@ -346,11 +350,13 @@ class MainWindow(QMainWindow):
         self._menu_action(hm, t("menu.help.about"), "", lambda: AboutDialog(self).exec())
 
     def _menu_action(self, menu, text, shortcut, slot) -> QAction:
+        """Ajoute une action a un menu avec raccourci optionnel."""
         a = menu.addAction(text)
         if shortcut: a.setShortcut(shortcut)
         a.triggered.connect(slot); return a
 
     def _setup_shortcuts(self):
+        """Configure les raccourcis clavier globaux (space, esc, etc)."""
         for key, slot in [
             (Qt.Key.Key_Space, self._toggle_play),
             (Qt.Key.Key_Escape, self._deselect),
@@ -364,6 +370,7 @@ class MainWindow(QMainWindow):
             s.activated.connect(slot)
 
     def _connect(self):
+        """Connecte tous les signaux/slots entre widgets."""
         self.transport.play_clicked.connect(self._play)
         self.transport.pause_clicked.connect(self._stop)
         self.transport.stop_clicked.connect(self._stop)
@@ -388,6 +395,7 @@ class MainWindow(QMainWindow):
         self.timeline_w.seek_requested.connect(self._seek_from_timeline)
 
     def _update_undo_labels(self):
+        """Met a jour les tooltips des boutons undo/redo."""
         hu, hr = bool(self._undo), bool(self._redo)
         self.btn_undo.setEnabled(hu); self.btn_redo.setEnabled(hr)
         if hu:
@@ -424,18 +432,22 @@ class MainWindow(QMainWindow):
     # ══════ Metronome & Grid ══════
 
     def _toggle_metronome(self):
+        """Active/desactive le metronome depuis le bouton toolbar."""
         self.playback.metronome.enabled = self.btn_metro.isChecked()
 
     def _adjust_bpm(self, delta):
+        """Incremente/decremente le BPM de la valeur donnee."""
         self.bpm_spin.setValue(self.bpm_spin.value() + delta)
 
     def _on_bpm_changed(self, val):
+        """Synchronise le BPM du metronome et de la grille."""
         self.playback.metronome.set_bpm(val)
         if self.waveform._grid_enabled:
             self.waveform._grid_bpm = val
             self.waveform.update()
 
     def _show_grid_menu(self):
+        """Affiche le menu dropdown de choix de grille (style FL Studio)."""
         menu = QMenu(self)
         menu.setStyleSheet(f"""
             QMenu {{ background: {COLORS['bg_panel']}; color: {COLORS['text']};
@@ -460,6 +472,7 @@ class MainWindow(QMainWindow):
         menu.exec(pos)
 
     def _set_grid(self, label, subdiv):
+        """Applique la configuration de grille selectionnee."""
         if subdiv == 0:
             self.waveform.set_grid(False)
             self.btn_grid.setText("Grid: Off"); return
@@ -475,6 +488,7 @@ class MainWindow(QMainWindow):
         self.btn_grid.setText(f"Grid: {label}")
 
     def _open_metronome_dialog(self):
+        """Ouvre le dialogue complet de reglages du metronome."""
         metro = self.playback.metronome
         dlg = QDialog(self)
         dlg.setWindowTitle("Metronome Settings"); dlg.setFixedWidth(300)
@@ -531,6 +545,7 @@ class MainWindow(QMainWindow):
     # ══════ Playback ══════
 
     def _toggle_play(self):
+        """Bascule play/pause."""
         if self.audio_data is None: return
         if self.playback.is_playing:
             self._stop()        # stop → return to anchor
@@ -538,6 +553,7 @@ class MainWindow(QMainWindow):
             self._play()        # play from anchor
 
     def _play(self):
+        """Demarre la lecture depuis la selection ou la position actuelle."""
         if self.audio_data is None: return
         s, e = self._sel_range()
         if s is not None:
@@ -553,9 +569,11 @@ class MainWindow(QMainWindow):
         self.transport.set_playing(True)
 
     def _pause(self):
+        """Met en pause la lecture."""
         self.playback.pause(); self.transport.set_playing(False)
 
     def _stop(self):
+        """Arrete la lecture et remet le curseur a l ancre."""
         self.playback.stop(); self.transport.set_playing(False)
         # Return playhead to anchor if set, else to 0
         anchor = self.waveform._anchor
@@ -602,6 +620,7 @@ class MainWindow(QMainWindow):
                 format_time(get_duration(self.audio_data, self.sample_rate)))
 
     def _on_sel(self, s, e):
+        """Met a jour la selection et affiche la duree."""
         dur = format_time(abs(e - s) / self.sample_rate)
         self.transport.set_selection_info(f"Sel: {dur}")
         self.waveform._anchor = None
@@ -623,9 +642,11 @@ class MainWindow(QMainWindow):
             self.timeline_w.set_playhead(start, self.sample_rate)
 
     def _on_finished(self):
+        """Callback quand la lecture arrive en fin de fichier."""
         QTimer.singleShot(0, lambda: self.transport.set_playing(False))
 
     def _upd_playhead(self):
+        """Timer callback — met a jour le playhead pendant la lecture."""
         if self.playback.is_playing and self.audio_data is not None:
             pos = self.playback.position
             self.waveform.set_playhead(pos)
@@ -635,6 +656,7 @@ class MainWindow(QMainWindow):
                 format_time(get_duration(self.audio_data, self.sample_rate)))
 
     def _sel_range(self):
+        """Retourne la plage de selection (debut, fin) en samples."""
         s, e = self.waveform.selection_start, self.waveform.selection_end
         if s is not None and e is not None and abs(s - e) > 10:
             return min(s, e), max(s, e)
@@ -652,6 +674,7 @@ class MainWindow(QMainWindow):
     # ══════ Open ══════
 
     def _open(self):
+        """Ouvre un fichier audio ou projet."""
         exts_list = " ".join(["*" + e for e in sorted(ALL_EXTENSIONS)])
         fp, _ = QFileDialog.getOpenFileName(
             self, t("menu.file.open"), "",
@@ -665,6 +688,7 @@ class MainWindow(QMainWindow):
             self._load_audio(fp)
 
     def _load_audio(self, fp):
+        """Charge un fichier audio dans la timeline."""
         try:
             self._stop()
             data, sr = load_audio(fp)
@@ -775,6 +799,7 @@ class MainWindow(QMainWindow):
     # ══════ Clip selection → waveform highlight ══════
 
     def _on_clip_sel(self, clip_id):
+        """Callback quand un clip est selectionne dans la timeline."""
         for c in self.timeline.clips:
             if c.id == clip_id:
                 self.waveform.set_clip_highlight(c.position, c.end_position)
@@ -804,6 +829,7 @@ class MainWindow(QMainWindow):
         return None
 
     def _on_effect(self, effect_id):
+        """Ouvre le dialogue d un effet et l applique si confirme."""
         if self.audio_data is None:
             QMessageBox.warning(self, APP_NAME, t("error.no_audio")); return
         plugin = self._find_plugin(effect_id)
@@ -1035,6 +1061,7 @@ class MainWindow(QMainWindow):
         self.effects_panel.set_presets(tag_map, all_presets)
 
     def _on_preset(self, name):
+        """Applique un preset (chaine d effets) a la selection."""
         if self.audio_data is None:
             QMessageBox.warning(self, APP_NAME, t("error.no_audio")); return
         s, e = self._sel_range()
@@ -1078,6 +1105,7 @@ class MainWindow(QMainWindow):
             self._set_busy(False)
 
     def _new_preset(self):
+        """Cree un nouveau preset depuis la selection actuelle."""
         tags = self.preset_manager.get_all_tags()
         dlg = PresetCreateDialog(tags, self, preset_manager=self.preset_manager)
         if dlg.exec() == dlg.DialogCode.Accepted and dlg.result_preset:
@@ -1086,6 +1114,7 @@ class MainWindow(QMainWindow):
             self._refresh_presets()
 
     def _manage_presets(self):
+        """Ouvre le gestionnaire de presets."""
         dlg = PresetManageDialog(self.preset_manager, self)
         dlg.exec()
         if dlg.deleted:
@@ -1138,6 +1167,7 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage(f"Reorder error: {e}")
 
     def _split_clip(self, cid, pos):
+        """Coupe un clip en deux a la position donnee."""
         clip = self._find_clip(cid)
         if not clip or pos <= 0 or pos >= clip.duration_samples:
             return
@@ -1207,6 +1237,7 @@ class MainWindow(QMainWindow):
     # ══════ Undo / Redo ══════
 
     def _push_undo(self, desc):
+        """Empile l etat actuel pour undo (max 30 niveaux)."""
         if self.audio_data is None:
             return
         # Snapshot clip state (references are safe — arrays get replaced, not mutated)
@@ -1221,6 +1252,7 @@ class MainWindow(QMainWindow):
         self._update_undo_labels()
 
     def _do_undo(self):
+        """Annule la derniere action (Ctrl+Z)."""
         if not self._undo:
             return
         # Save current state to redo (references, no copies)
@@ -1233,6 +1265,7 @@ class MainWindow(QMainWindow):
         self._update_undo_labels()
 
     def _do_redo(self):
+        """Retablit la derniere action annulee (Ctrl+Y)."""
         if not self._redo:
             return
         cn = [(c.name, c.audio_data, c.position, c.color) for c in self.timeline.clips]
@@ -1261,6 +1294,7 @@ class MainWindow(QMainWindow):
     # ══════ Settings ══════
 
     def _settings_audio(self):
+        """Ouvre les parametres audio."""
         dlg = SettingsDialog(self.playback.output_device, self.playback.input_device, self)
         if dlg.exec() == dlg.DialogCode.Accepted:
             self.playback.set_output_device(dlg.selected_output)
@@ -1268,6 +1302,7 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage("Audio devices updated")
 
     def _settings_language(self):
+        """Ouvre le dialogue de changement de langue."""
         from PyQt6.QtWidgets import QInputDialog
         langs = ["English", "Français"]
         codes = ["en", "fr"]
@@ -1286,6 +1321,7 @@ class MainWindow(QMainWindow):
                 self.statusBar().showMessage(t("status.lang_changed"))
 
     def _import_effect(self):
+        """Ouvre le dialogue d import de plugin."""
         from gui.import_plugin_dialog import ImportPluginDialog
         dlg = ImportPluginDialog(self)
         dlg.exec()
@@ -1316,16 +1352,19 @@ class MainWindow(QMainWindow):
         self._unsaved = True
 
     def _select_all(self):
+        """Selectionne tout l audio (Ctrl+A)."""
         if self.audio_data is not None:
             self.waveform.set_selection(0, len(self.audio_data))
             self.waveform.selection_changed.emit(0, len(self.audio_data))
 
     def _catalog(self):
+        """Ouvre le catalogue des effets."""
         CatalogDialog(self).exec()
 
     # ══════ Drag & Drop ══════
 
     def dragEnterEvent(self, e: QDragEnterEvent):
+        """Accepte le drop si c est un fichier audio ou .gspi."""
         if e.mimeData().hasUrls():
             for u in e.mimeData().urls():
                 ext = os.path.splitext(u.toLocalFile())[1].lower()
@@ -1335,6 +1374,7 @@ class MainWindow(QMainWindow):
         e.ignore()
 
     def dropEvent(self, e: QDropEvent):
+        """Charge le fichier droppe."""
         for u in e.mimeData().urls():
             fp = u.toLocalFile()
             ext = os.path.splitext(fp)[1].lower()
@@ -1347,6 +1387,7 @@ class MainWindow(QMainWindow):
     # ══════ Close ══════
 
     def closeEvent(self, e):
+        """Demande confirmation si le projet a ete modifie avant de fermer."""
         if self._unsaved and self.audio_data is not None:
             r = QMessageBox.question(
                 self, APP_NAME, "Unsaved changes. Save project?",

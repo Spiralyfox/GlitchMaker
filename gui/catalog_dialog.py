@@ -52,6 +52,7 @@ class _IconWidget(QWidget):
         self.setFixedSize(32, 32)
 
     def paintEvent(self, e):
+        """Dessine l icone lettre avec la couleur du plugin."""
         p = QPainter(self); p.setRenderHint(QPainter.RenderHint.Antialiasing)
         p.setBrush(QBrush(QColor(self._c))); p.setPen(Qt.PenStyle.NoPen)
         p.drawRoundedRect(1, 1, 30, 30, 5, 5)

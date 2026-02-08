@@ -1,4 +1,4 @@
-# Glitch Maker v3.8
+# Glitch Maker v3.10
 
 Application desktop d'edition et de glitching audio pour la production **digicore / hyperpop / glitchcore / dariacore**.
 
@@ -40,10 +40,11 @@ Resultat dans `dist/Glitch.exe` (standalone, pas besoin de Python installe).
 | **Glitch** | Stutter, Granular, Slice Shuffle, Buffer Freeze, Datamosh, Vocal Chop, Tape Glitch |
 
 Chaque effet a une fenetre de parametres avec preview audio en temps reel.
+Les icones des effets affichent la lettre initiale sur un carre colore.
 
 ### 25 Presets
 
-Presets classes par tags avec indicateur couleur :
+Presets classes par tags avec pastille couleur :
 
 - **Autotune** : Hard Autotune, Soft Autotune, Autotune + Reverb Wash
 - **Hyperpop** : 100 gecs Mode, Hyperpop Maximum, Hyperpop Lite, Digital Angel, Nightcore Classic
@@ -62,19 +63,21 @@ Export / import de presets au format `.pspi`.
 - Choix de resolution : Bar, Beat, 1/2, 1/3, 1/4, 1/6, 1/8, 1/12, 1/16
 - Controles BPM avec boutons +/- (auto-repeat) dans la toolbar
 
+### Waveform interactive
+
+- Zoom a la molette (centre sur curseur, jusqu'a x100)
+- Barre de scroll horizontale quand zoome (entre waveform et timeline)
+- Selection par drag avec curseur bleu
+- Playhead temps reel
+- Grille de temps superposee
+- Indicateur de zoom (x2.5, x10, etc.)
+
 ### Timeline avancee
 
 - Clips audio avec drag & drop
 - Clic droit : Couper, Dupliquer, Fade In/Out, Supprimer
 - Effets appliques en 3 blocs (avant / effet / apres)
 - Effets globaux non-destructifs sur toute la timeline
-
-### Waveform interactive
-
-- Zoom a la molette (centre sur curseur, jusqu'a x100)
-- Selection par drag avec curseur bleu
-- Playhead vert temps reel
-- Grille de temps superposee
 
 ### Projet .gspi
 
@@ -111,6 +114,40 @@ Possibilite d'importer des effets personnalises (fichiers `.py` avec classe `Plu
 |------|---------|
 | Import | WAV, MP3, FLAC, OGG, M4A, AIFF |
 | Export | WAV, MP3, FLAC |
+
+## Architecture du code
+
+```
+main.py                     Point d'entree
+utils/
+  config.py                 Couleurs, chemins, settings
+  translator.py             Systeme i18n (t() pour traduire)
+core/
+  audio_engine.py           Chargement / export audio (WAV, MP3, FLAC)
+  playback.py               Lecture temps reel (sounddevice, low-latency)
+  metronome.py              Generation de clics synchronises au BPM
+  timeline.py               Modele de donnees timeline (clips)
+  project.py                Sauvegarde / chargement projet .gspi
+  preset_manager.py         Gestion des presets (builtin + user)
+  effects/                  28 effets audio (un fichier par effet)
+gui/
+  main_window.py            Fenetre principale (toolbar, menus, connexions)
+  waveform_widget.py        Affichage waveform (zoom, grille, selection)
+  timeline_widget.py        Affichage timeline (clips, drag, context menu)
+  transport_bar.py          Barre de transport (play/stop/volume)
+  effects_panel.py          Sidebar effets + presets
+  effect_dialogs.py         Dialogues de parametres pour chaque effet
+  dialogs.py                Dialogues generaux (enregistrement, about)
+plugins/
+  loader.py                 Chargement des 28 plugins builtin
+  user_loader.py            Import / gestion des plugins utilisateur
+lang/
+  en.json / fr.json         Traductions
+assets/
+  presets.json              Presets builtin
+```
+
+Toutes les fonctions sont documentees avec des docstrings en francais.
 
 ## Stack technique
 

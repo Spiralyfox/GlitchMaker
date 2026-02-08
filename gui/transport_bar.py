@@ -8,9 +8,11 @@ class TransportBar(QWidget):
     volume_changed = pyqtSignal(float)
 
     def __init__(self, parent=None):
+        """Initialise la barre de transport (play/stop/volume/temps)."""
         super().__init__(parent); self.setFixedHeight(46); self._playing = False; self._build()
 
     def _build(self):
+        """Construit les widgets de la barre de transport."""
         lo = QHBoxLayout(self); lo.setContentsMargins(10, 4, 10, 4); lo.setSpacing(6)
         self.btn_stop = self._btn("STOP", 50, COLORS['button_bg'])
         self.btn_stop.clicked.connect(self.stop_clicked.emit); lo.addWidget(self.btn_stop)
@@ -34,12 +36,17 @@ class TransportBar(QWidget):
         self.vol_slider.valueChanged.connect(lambda v: self.lbl_vol.setText(f"{v}%")); lo.addWidget(self.lbl_vol)
 
     def _btn(self, text, width, bg, bold=False):
+        """Cree un bouton stylise pour la barre de transport."""
         b = QPushButton(text); b.setFixedSize(width, 32); b.setCursor(Qt.CursorShape.PointingHandCursor)
         bw = "bold" if bold else "normal"
         b.setStyleSheet(f"QPushButton {{ background: {bg}; color: white; border: none; border-radius: 5px; font-size: 13px; font-weight: {bw}; }} QPushButton:hover {{ background: {COLORS['accent_hover']}; }}")
         return b
 
+    """Emet play ou pause selon l etat actuel."""
     def _on_play(self): (self.pause_clicked if self._playing else self.play_clicked).emit()
+    """Met a jour l affichage play/pause."""
     def set_playing(self, p): self._playing = p; self.btn_play.setText("PAUSE" if p else "PLAY")
+    """Met a jour l affichage du temps courant/total."""
     def set_time(self, c, t): self.lbl_time.setText(f"{c} / {t}")
+    """Affiche l info de selection dans la barre."""
     def set_selection_info(self, t): self.lbl_sel.setText(t)

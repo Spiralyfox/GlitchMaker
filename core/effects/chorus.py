@@ -4,6 +4,7 @@ import numpy as np
 def chorus(audio_data: np.ndarray, start: int, end: int,
            depth_ms: float = 5.0, rate_hz: float = 1.5,
            mix: float = 0.5, voices: int = 2, sr: int = 44100) -> np.ndarray:
+    """Applique un effet chorus (doublement avec modulation)."""
     out = audio_data.copy()
     seg = out[start:end].astype(np.float64)
     n = len(seg)

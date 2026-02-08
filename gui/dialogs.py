@@ -47,10 +47,12 @@ class RecordDialog(QDialog):
         self._timer = QTimer(); self._timer.timeout.connect(self._upd); self._timer.setInterval(50); self._elapsed = 0.0
 
     def _toggle(self):
+        """Bascule entre enregistrement et arret."""
         if not self._recording: self._start()
         else: self._stop_rec()
 
     def _start(self):
+        """Demarre l enregistrement micro via sounddevice."""
         self._data.clear(); self._recording = True; self._elapsed = 0.0
         self.btn_rec.setText("STOP"); self.lbl_status.setText(t("record.recording"))
         self.lbl_status.setStyleSheet(f"color: {COLORS['recording']}; font-size: 12px;")
@@ -62,6 +64,7 @@ class RecordDialog(QDialog):
             self.lbl_status.setText(f"Error: {e}"); self._recording = False
 
     def _stop_rec(self):
+        """Arrete l enregistrement et ferme le dialog."""
         self._recording = False; self._timer.stop()
         if self._stream: self._stream.stop(); self._stream.close(); self._stream = None
         self.btn_rec.setText("REC"); self.lbl_status.setText(t("record.done"))
@@ -69,17 +72,21 @@ class RecordDialog(QDialog):
         self.btn_done.setEnabled(len(self._data) > 0)
 
     def _cb(self, indata, frames, ti, status):
+        """Callback audio appele par sounddevice pour chaque buffer."""
         if self._recording: self._data.append(indata.copy()); self._level = float(np.max(np.abs(indata)))
 
     def _upd(self):
+        """Met a jour l affichage du temps d enregistrement."""
         self.level_bar.setValue(int(self._level * 100)); self._elapsed += 0.05
         self.lbl_timer.setText(f"{int(self._elapsed//60):02d}:{int(self._elapsed%60):02d}")
 
     def _finish(self):
+        """Termine l enregistrement, concatene les buffers."""
         if self._data: self.recording_done.emit(np.concatenate(self._data, axis=0), RECORDING_SAMPLE_RATE)
         self.accept()
 
     def closeEvent(self, e):
+        """Arrete l enregistrement si le dialog est ferme."""
         if self._recording: self._stop_rec(); e.accept()
 
 

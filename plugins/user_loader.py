@@ -42,10 +42,12 @@ def get_user_translation(plugin_id: str, key: str, lang: str) -> str | None:
 # ═══ Registry management ═══
 
 def _ensure_dir():
+    """Cree le dossier user_plugins s il n existe pas."""
     os.makedirs(_BASE_DIR, exist_ok=True)
 
 
 def _load_registry() -> list:
+    """Charge le registre des plugins utilisateur (JSON)."""
     if os.path.isfile(_REGISTRY_PATH):
         try:
             with open(_REGISTRY_PATH, "r", encoding="utf-8") as f:
@@ -56,12 +58,14 @@ def _load_registry() -> list:
 
 
 def _save_registry(entries: list):
+    """Sauvegarde le registre des plugins utilisateur."""
     _ensure_dir()
     with open(_REGISTRY_PATH, "w", encoding="utf-8") as f:
         json.dump(entries, f, indent=2)
 
 
 def get_user_plugins_dir() -> str:
+    """Retourne le chemin du dossier user_plugins."""
     _ensure_dir()
     return _BASE_DIR
 
@@ -210,6 +214,7 @@ def _make_dialog_class(meta: dict, params: list):
             self._finish()
 
         def get_params(self):
+            """Retourne les parametres d un plugin utilisateur."""
             result = {}
             for key, (ptype, w) in self._widgets.items():
                 if ptype in ("int", "float"):
@@ -221,6 +226,7 @@ def _make_dialog_class(meta: dict, params: list):
             return result
 
         def set_params(self, p):
+            """Met a jour les parametres d un plugin utilisateur."""
             for key, (ptype, w) in self._widgets.items():
                 if key in p:
                     if ptype in ("int", "float"):
@@ -279,7 +285,9 @@ def load_user_plugins() -> dict:
 
             # Create wrapper function
             def _make_wrapper(fn):
+                """Cree une fonction wrapper pour un plugin utilisateur."""
                 def wrapper(audio_data, start, end, sr=44100, **kw):
+                    """Fonction wrapper qui appelle process() du plugin utilisateur."""
                     return fn(audio_data, start, end, sr=sr, **kw)
                 return wrapper
 

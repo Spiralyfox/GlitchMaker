@@ -24,6 +24,7 @@ class PresetManager:
 
     def _load(self):
         # Built-in presets & tags
+        """Charge les presets depuis les fichiers JSON (builtin + user)."""
         try:
             with open(_BUILTIN_PATH, "r", encoding="utf-8") as f:
                 data = json.load(f)
@@ -54,6 +55,7 @@ class PresetManager:
             self._deleted_tags = []
 
     def _save_user(self):
+        """Sauvegarde les presets utilisateur dans user_presets.json."""
         try:
             with open(_USER_PATH, "w", encoding="utf-8") as f:
                 json.dump(self._user, f, indent=2)
@@ -61,6 +63,7 @@ class PresetManager:
             pass
 
     def _save_tags(self):
+        """Sauvegarde les associations tags/presets."""
         try:
             with open(_USER_TAGS_PATH, "w", encoding="utf-8") as f:
                 json.dump(self._user_tags, f, indent=2)
@@ -68,6 +71,7 @@ class PresetManager:
             pass
 
     def _save_deleted_tags(self):
+        """Sauvegarde les presets builtin supprimes."""
         try:
             with open(_DELETED_TAGS_PATH, "w", encoding="utf-8") as f:
                 json.dump(self._deleted_tags, f, indent=2)
@@ -77,18 +81,22 @@ class PresetManager:
     # ── Presets ──
 
     def get_all_presets(self) -> list[dict]:
+        """Retourne tous les presets (builtin + user) non supprimes."""
         return self._builtin + self._user
 
     def get_preset(self, name: str) -> dict | None:
+        """Retourne un preset par son nom."""
         for p in self.get_all_presets():
             if p["name"] == name:
                 return p
         return None
 
     def get_presets_by_tag(self, tag: str) -> list[dict]:
+        """Retourne les presets qui ont le tag donne."""
         return [p for p in self.get_all_presets() if tag in p.get("tags", [])]
 
     def add_preset(self, name: str, description: str, tags: list[str], effects: list[dict]):
+        """Ajoute un nouveau preset utilisateur."""
         self._user.append({
             "name": name, "description": description,
             "tags": tags, "effects": effects, "builtin": False,
@@ -96,6 +104,7 @@ class PresetManager:
         self._save_user()
 
     def delete_preset(self, name: str) -> bool:
+        """Supprime un preset (utilisateur ou masque un builtin)."""
         for i, p in enumerate(self._user):
             if p["name"] == name:
                 self._user.pop(i)
@@ -160,6 +169,7 @@ class PresetManager:
         return True
 
     def is_builtin_tag(self, tag: str) -> bool:
+        """Retourne True si le tag est un tag builtin."""
         return tag in self._builtin_tags and tag not in self._deleted_tags
 
     # ── Export / Import (.pspi) ──

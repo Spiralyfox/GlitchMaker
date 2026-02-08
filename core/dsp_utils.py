@@ -3,6 +3,7 @@ import numpy as np
 
 
 def fade_in(audio: np.ndarray, duration_samples: int) -> np.ndarray:
+    """Applique un fade in lineaire sur les n premiers samples."""
     result = audio.copy()
     n = min(duration_samples, len(result))
     if n <= 0: return result
@@ -14,6 +15,7 @@ def fade_in(audio: np.ndarray, duration_samples: int) -> np.ndarray:
 
 
 def fade_out(audio: np.ndarray, duration_samples: int) -> np.ndarray:
+    """Applique un fade out lineaire sur les n derniers samples."""
     result = audio.copy()
     n = min(duration_samples, len(result))
     if n <= 0: return result

@@ -30,6 +30,7 @@ EFFECT_NAMES = [
 
 
 def _btn(text, bg=COLORS['accent']):
+    """Cree un bouton stylise."""
     b = QPushButton(text); b.setFixedHeight(30)
     b.setCursor(Qt.CursorShape.PointingHandCursor)
     b.setStyleSheet(
@@ -40,6 +41,7 @@ def _btn(text, bg=COLORS['accent']):
 
 
 def _link_btn(text, color=COLORS['selection']):
+    """Cree un bouton-lien (texte sans bordure)."""
     b = QPushButton(text); b.setFixedHeight(22)
     b.setCursor(Qt.CursorShape.PointingHandCursor)
     b.setStyleSheet(
@@ -50,6 +52,7 @@ def _link_btn(text, color=COLORS['selection']):
 
 
 def _sep():
+    """Cree un separateur horizontal."""
     s = QFrame(); s.setFrameShape(QFrame.Shape.HLine)
     s.setStyleSheet(f"color: {COLORS['border']};"); return s
 
@@ -106,6 +109,7 @@ class TagManageDialog(QDialog):
         lo.addLayout(row)
 
     def _populate(self):
+        """Remplit la liste des presets."""
         self.lst.clear()
         for tag in self.pm.get_all_tags():
             count = len(self.pm.get_presets_by_tag(tag))
@@ -114,6 +118,7 @@ class TagManageDialog(QDialog):
             self.lst.addItem(it)
 
     def _add(self):
+        """Ajoute un nouveau preset."""
         tag = self.new_inp.text().strip()
         if not tag:
             return
@@ -127,6 +132,7 @@ class TagManageDialog(QDialog):
         self._populate()
 
     def _delete(self):
+        """Supprime le preset selectionne."""
         items = self.lst.selectedItems()
         if not items:
             return
@@ -252,22 +258,27 @@ class PresetCreateDialog(QDialog):
             self._refresh_tag_combo()
 
     def _add_tag(self):
+        """Ajoute un tag au preset en cours d edition."""
         tag = self.tag_combo.currentText()
         if tag and not self.tag_list.findItems(tag, Qt.MatchFlag.MatchExactly):
             self.tag_list.addItem(tag)
 
     def _rm_tag(self):
+        """Retire un tag du preset en cours d edition."""
         for it in self.tag_list.selectedItems():
             self.tag_list.takeItem(self.tag_list.row(it))
 
     def _add_eff(self):
+        """Ajoute un effet a la chaine du preset."""
         self.eff_list.addItem(self.eff_combo.currentText())
 
     def _rm_eff(self):
+        """Retire un effet de la chaine du preset."""
         for it in self.eff_list.selectedItems():
             self.eff_list.takeItem(self.eff_list.row(it))
 
     def _save(self):
+        """Sauvegarde le preset edite."""
         name = self.name_inp.text().strip()
         if not name:
             QMessageBox.warning(self, "Glitch Maker", "Name is required.")
@@ -327,6 +338,7 @@ class PresetManageDialog(QDialog):
         lo.addLayout(row)
 
     def _populate(self):
+        """Remplit la liste des presets."""
         self.lst.clear()
         for p in self.pm.get_all_presets():
             prefix = "★ " if p.get("builtin") else "  "
@@ -337,6 +349,7 @@ class PresetManageDialog(QDialog):
             self.lst.addItem(it)
 
     def _delete(self):
+        """Supprime le preset selectionne."""
         for it in self.lst.selectedItems():
             if it.data(Qt.ItemDataRole.UserRole + 1):
                 QMessageBox.information(self, "Glitch Maker",
@@ -348,6 +361,7 @@ class PresetManageDialog(QDialog):
         self._populate()
 
     def _manage_tags(self):
+        """Ouvre le dialogue de gestion des tags."""
         dlg = TagManageDialog(self.pm, self)
         dlg.exec()
         if dlg.changed:

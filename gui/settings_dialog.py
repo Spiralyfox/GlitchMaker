@@ -29,6 +29,7 @@ _SS = f"""
 
 class SettingsDialog(QDialog):
     def __init__(self, current_output=None, current_input=None, parent=None):
+        """Dialogue de parametres audio (entree/sortie/taux)."""
         super().__init__(parent)
         self.setWindowTitle("Settings")
         self.setFixedSize(460, 400)
@@ -113,6 +114,7 @@ class SettingsDialog(QDialog):
         lo.addLayout(row)
 
     def _apply(self):
+        """Applique les parametres selectionnes et ferme le dialog."""
         self.selected_output = self.combo_out.currentData()
         self.selected_input = self.combo_in.currentData()
         self.selected_language = self.combo_lang.currentData()

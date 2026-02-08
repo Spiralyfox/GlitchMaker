@@ -36,14 +36,17 @@ class AudioClip:
 
     @property
     def duration_samples(self) -> int:
+        """Retourne la duree du clip en samples."""
         return len(self.audio_data) if self.audio_data is not None else 0
 
     @property
     def duration_seconds(self) -> float:
+        """Retourne la duree du clip en secondes."""
         return self.duration_samples / self.sample_rate if self.sample_rate > 0 else 0.0
 
     @property
     def end_position(self) -> int:
+        """Retourne la position de fin du clip (position + duree)."""
         return self.position + self.duration_samples
 
 
@@ -51,11 +54,13 @@ class Timeline:
     """Ordered list of audio clips. Renders to a single stereo buffer."""
 
     def __init__(self):
+        """Initialise la timeline vide."""
         self.clips: list[AudioClip] = []
         self.sample_rate: int = 44100
         self._color_counter: int = 0
 
     def clear(self):
+        """Supprime tous les clips de la timeline."""
         self.clips.clear()
 
     def add_clip(self, audio_data: np.ndarray, sr: int,
@@ -109,8 +114,10 @@ class Timeline:
 
     @property
     def total_duration_samples(self) -> int:
+        """Retourne la duree totale en samples (fin du dernier clip)."""
         return max((c.end_position for c in self.clips), default=0)
 
     @property
     def total_duration_seconds(self) -> float:
+        """Retourne la duree totale en secondes."""
         return self.total_duration_samples / self.sample_rate if self.sample_rate > 0 else 0.0

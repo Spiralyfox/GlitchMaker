@@ -4,6 +4,7 @@ import numpy as np
 def distortion(audio_data: np.ndarray, start: int, end: int,
                drive: float = 5.0, tone: float = 0.5,
                mode: str = "tube") -> np.ndarray:
+    """Applique une distortion (fuzz, overdrive, crunch)."""
     out = audio_data.copy()
     seg = out[start:end].astype(np.float64) * drive
     if mode == "tube":
