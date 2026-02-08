@@ -111,14 +111,13 @@ class CollapsibleSection(QWidget):
     def __init__(self, title, start_expanded=True, parent=None):
         super().__init__(parent)
         self._expanded = start_expanded
+        self._count = 0
         lo = QVBoxLayout(self)
         lo.setContentsMargins(0, 0, 0, 0)
         lo.setSpacing(0)
 
-        # Header
-        arrow = "\u25be" if self._expanded else "\u25b8"
         self._title = title
-        self._header = QPushButton(f"{arrow}  {title}")
+        self._header = QPushButton()
         self._header.setFlat(True)
         self._header.setStyleSheet(
             f"QPushButton {{ color: {COLORS['text_dim']}; font-size: 10px; font-weight: bold; "
@@ -128,9 +127,9 @@ class CollapsibleSection(QWidget):
         )
         self._header.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self._header.clicked.connect(self._toggle)
+        self._update_header()
         lo.addWidget(self._header)
 
-        # Content
         self._content = QWidget()
         self._clo = QVBoxLayout(self._content)
         self._clo.setContentsMargins(0, 0, 0, 2)
@@ -138,58 +137,86 @@ class CollapsibleSection(QWidget):
         self._content.setVisible(self._expanded)
         lo.addWidget(self._content)
 
+    def _update_header(self):
+        arrow = "\u25be" if self._expanded else "\u25b8"
+        cnt = f"  ({self._count})" if self._count > 0 else ""
+        self._header.setText(f"{arrow}  {self._title}{cnt}")
+
     def _toggle(self):
         self._expanded = not self._expanded
         self._content.setVisible(self._expanded)
-        arrow = "\u25be" if self._expanded else "\u25b8"
-        self._header.setText(f"{arrow}  {self._title}")
+        self._update_header()
 
     def add_widget(self, w):
         self._clo.addWidget(w)
+        self._count += 1
+        self._update_header()
 
 
-# ═══ Preset Item ═══
+# ═══ Preset Item (compact — colored dot, tooltip, hover accent) ═══
+
+_TAG_COLORS = {
+    "Autotune": "#f72585", "Hyperpop": "#ff006e", "Digicore": "#7209b7",
+    "Emocore": "#e94560", "Glitch": "#9b2226", "Vocal": "#4cc9f0",
+    "Ambient": "#2a9d8f", "Lo-fi": "#606c38", "Aggressive": "#bb3e03",
+    "Experimental": "#b5179e", "Electro": "#0ea5e9", "Tape": "#6b705c",
+    "Clean": "#16c79a", "Subtle": "#457b9d", "Dariacore": "#c74b50",
+    "Rhythmic": "#e07c24", "Psychedelic": "#6d597a", "Bass": "#264653",
+    "Cinematic": "#3d5a80",
+}
+
 
 class PresetItem(QWidget):
     clicked = pyqtSignal(str)
 
-    def __init__(self, name, desc, parent=None):
+    def __init__(self, name, desc, tags=None, parent=None):
         super().__init__(parent)
         self._name = name
-        self.setFixedHeight(32)
+        self._hovered = False
+        self._color = COLORS['accent']
+        if tags:
+            for tg in tags:
+                if tg in _TAG_COLORS:
+                    self._color = _TAG_COLORS[tg]; break
+        self.setFixedHeight(26)
         self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        if desc:
+            self.setToolTip(f"<b>{name}</b><br><span style='color:#aaa'>{desc}</span>")
 
         lo = QHBoxLayout(self)
-        lo.setContentsMargins(10, 2, 10, 2)
-        lo.setSpacing(8)
+        lo.setContentsMargins(10, 0, 10, 0)
+        lo.setSpacing(6)
 
-        # Icon
-        ic = QLabel("\u2728")
-        ic.setFixedWidth(16)
-        ic.setStyleSheet(f"font-size: 10px;")
-        lo.addWidget(ic)
+        dot = QLabel()
+        dot.setFixedSize(6, 6)
+        dot.setStyleSheet(f"background: {self._color}; border-radius: 3px;")
+        lo.addWidget(dot)
 
-        # Name + desc
-        tl = QVBoxLayout()
-        tl.setSpacing(0)
-        nm = QLabel(name)
-        nm.setStyleSheet(f"color: {COLORS['text']}; font-size: 11px; font-weight: bold;")
-        tl.addWidget(nm)
-        if desc:
-            d = QLabel(desc)
-            d.setStyleSheet(f"color: {COLORS['text_dim']}; font-size: 9px;")
-            d.setWordWrap(True)
-            tl.addWidget(d)
-        lo.addLayout(tl, stretch=1)
-
-        self.setStyleSheet(
-            f"PresetItem {{ background: transparent; border-radius: 4px; }}"
-            f"PresetItem:hover {{ background: {COLORS['button_bg']}; }}"
-        )
+        lbl = QLabel(name)
+        lbl.setStyleSheet(f"color: {COLORS['text']}; font-size: 11px;")
+        lo.addWidget(lbl, stretch=1)
 
     def mousePressEvent(self, e):
         if e.button() == Qt.MouseButton.LeftButton:
             self.clicked.emit(self._name)
+
+    def enterEvent(self, e):
+        self._hovered = True; self.update(); super().enterEvent(e)
+
+    def leaveEvent(self, e):
+        self._hovered = False; self.update(); super().leaveEvent(e)
+
+    def paintEvent(self, e):
+        if self._hovered:
+            p = QPainter(self); p.setRenderHint(QPainter.RenderHint.Antialiasing)
+            p.setPen(Qt.PenStyle.NoPen)
+            c = QColor(self._color); c.setAlpha(20)
+            p.setBrush(QBrush(c))
+            p.drawRoundedRect(0, 0, self.width(), self.height(), 5, 5)
+            p.setBrush(QBrush(QColor(self._color)))
+            p.drawRoundedRect(0, 3, 2, self.height() - 6, 1, 1)
+            p.end()
+        super().paintEvent(e)
 
 
 # ═══ Main Effects Panel ═══
@@ -393,14 +420,14 @@ class EffectsPanel(QWidget):
                     if q in p["name"].lower() or q in p.get("description", "").lower()
                 ]
                 for p in mp:
-                    item = PresetItem(p["name"], p.get("description", ""))
+                    item = PresetItem(p["name"], p.get("description", ""), p.get("tags", []))
                     item.clicked.connect(self.preset_clicked.emit)
                     cl.addWidget(item)
             else:
                 for tag, presets in sorted(self._tag_presets.items()):
                     section = CollapsibleSection(tag, start_expanded=False)
                     for p in presets:
-                        item = PresetItem(p["name"], p.get("description", ""))
+                        item = PresetItem(p["name"], p.get("description", ""), p.get("tags", []))
                         item.clicked.connect(self.preset_clicked.emit)
                         section.add_widget(item)
                     cl.addWidget(section)
@@ -414,7 +441,7 @@ class EffectsPanel(QWidget):
                 if untagged:
                     section = CollapsibleSection("Other", start_expanded=False)
                     for p in untagged:
-                        item = PresetItem(p["name"], p.get("description", ""))
+                        item = PresetItem(p["name"], p.get("description", ""), p.get("tags", []))
                         item.clicked.connect(self.preset_clicked.emit)
                         section.add_widget(item)
                     cl.addWidget(section)

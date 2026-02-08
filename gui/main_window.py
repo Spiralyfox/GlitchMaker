@@ -7,7 +7,8 @@ import os
 import numpy as np
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QFileDialog, QMessageBox, QPushButton, QLabel, QApplication
+    QFileDialog, QMessageBox, QPushButton, QLabel, QApplication,
+    QMenu, QSpinBox, QSlider, QDialog, QCheckBox, QFrame
 )
 from PyQt6.QtCore import Qt, QTimer, QThread, pyqtSignal as Signal
 from PyQt6.QtGui import QAction, QDragEnterEvent, QDropEvent, QShortcut, QKeySequence
@@ -185,7 +186,62 @@ class MainWindow(QMainWindow):
         tlo.addSpacing(12)
         self.toolbar_info = QLabel("")
         self.toolbar_info.setStyleSheet(f"color: {COLORS['text_dim']}; font-size: 10px;")
-        tlo.addWidget(self.toolbar_info); tlo.addStretch()
+        tlo.addWidget(self.toolbar_info)
+        tlo.addStretch()
+
+        _tss = (f"QPushButton {{ background: {COLORS['button_bg']}; color: {COLORS['text']};"
+                f" border: 1px solid {COLORS['border']}; border-radius: 4px;"
+                f" font-size: 10px; padding: 0 8px; }}"
+                f"QPushButton:hover {{ background: {COLORS['button_hover']}; border-color: {COLORS['accent']}; }}"
+                f"QPushButton:checked {{ background: {COLORS['accent']}; color: white; border-color: {COLORS['accent']}; }}")
+
+        # ── Metronome toggle ──
+        self.btn_metro = QPushButton("Metronome"); self.btn_metro.setFixedHeight(26)
+        self.btn_metro.setCheckable(True); self.btn_metro.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_metro.setStyleSheet(_tss)
+        self.btn_metro.clicked.connect(self._toggle_metronome)
+        tlo.addWidget(self.btn_metro)
+
+        # ── BPM: [-] spinner [+] ──
+        _small = (f"QPushButton {{ background: {COLORS['button_bg']}; color: {COLORS['text']};"
+                  f" border: 1px solid {COLORS['border']}; border-radius: 3px;"
+                  f" font-size: 12px; font-weight: bold; padding: 0; }}"
+                  f"QPushButton:hover {{ background: {COLORS['accent']}; color: white; }}")
+
+        self.btn_bpm_minus = QPushButton("-"); self.btn_bpm_minus.setFixedSize(22, 26)
+        self.btn_bpm_minus.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_bpm_minus.setStyleSheet(_small)
+        self.btn_bpm_minus.setAutoRepeat(True); self.btn_bpm_minus.setAutoRepeatInterval(80)
+        self.btn_bpm_minus.clicked.connect(lambda: self._adjust_bpm(-1))
+        tlo.addWidget(self.btn_bpm_minus)
+
+        self.bpm_spin = QSpinBox(); self.bpm_spin.setRange(20, 300); self.bpm_spin.setValue(120)
+        self.bpm_spin.setSuffix(" BPM"); self.bpm_spin.setFixedSize(82, 26)
+        self.bpm_spin.setStyleSheet(
+            f"QSpinBox {{ background: {COLORS['bg_dark']}; color: {COLORS['text']};"
+            f" border: 1px solid {COLORS['border']}; border-radius: 3px;"
+            f" font-size: 10px; padding: 0 2px; }}"
+            f"QSpinBox:focus {{ border-color: {COLORS['accent']}; }}"
+            f"QSpinBox::up-button, QSpinBox::down-button {{ width: 0; height: 0; }}")
+        self.bpm_spin.valueChanged.connect(self._on_bpm_changed)
+        tlo.addWidget(self.bpm_spin)
+
+        self.btn_bpm_plus = QPushButton("+"); self.btn_bpm_plus.setFixedSize(22, 26)
+        self.btn_bpm_plus.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_bpm_plus.setStyleSheet(_small)
+        self.btn_bpm_plus.setAutoRepeat(True); self.btn_bpm_plus.setAutoRepeatInterval(80)
+        self.btn_bpm_plus.clicked.connect(lambda: self._adjust_bpm(1))
+        tlo.addWidget(self.btn_bpm_plus)
+
+        tlo.addSpacing(4)
+
+        # ── Grid dropdown ──
+        self.btn_grid = QPushButton("Grid: Off"); self.btn_grid.setFixedHeight(26)
+        self.btn_grid.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_grid.setStyleSheet(_tss.replace(":checked", ":menu-indicator"))  # no check style needed
+        self.btn_grid.clicked.connect(self._show_grid_menu)
+        tlo.addWidget(self.btn_grid)
+
         rl.addWidget(tb)
 
         # Waveform
@@ -239,6 +295,9 @@ class MainWindow(QMainWindow):
         om = mb.addMenu(t("menu.options"))
         self._menu_action(om, t("menu.options.audio"), "", self._settings_audio)
         self._menu_action(om, t("menu.options.language"), "", self._settings_language)
+        om.addSeparator()
+        self._menu_action(om, "Metronome Settings...", "", self._open_metronome_dialog)
+        self._menu_action(om, "Grid Settings...", "", self._show_grid_menu)
         om.addSeparator()
         self._menu_action(om, t("menu.options.select_all"), "Ctrl+A", self._select_all)
         om.addSeparator()
@@ -315,6 +374,148 @@ class MainWindow(QMainWindow):
             self.btn_undo.setText("Undo  (Ctrl+Z)")
             self.toolbar_info.setText("")
         self.btn_redo.setText("Redo  (Ctrl+Y)")
+
+    # ══════ Metronome & Grid ══════
+
+    def _toggle_metronome(self):
+        self.playback.metronome.enabled = self.btn_metro.isChecked()
+
+    def _adjust_bpm(self, delta):
+        self.bpm_spin.setValue(self.bpm_spin.value() + delta)
+
+    def _on_bpm_changed(self, val):
+        self.playback.metronome.set_bpm(val)
+        if self.waveform._grid_enabled:
+            self.waveform._grid_bpm = val
+            self.waveform.update()
+
+    def _show_grid_menu(self):
+        menu = QMenu(self)
+        menu.setStyleSheet(f"""
+            QMenu {{ background: {COLORS['bg_panel']}; color: {COLORS['text']};
+                border: 1px solid {COLORS['border']}; padding: 4px; }}
+            QMenu::item {{ padding: 5px 24px 5px 12px; border-radius: 3px; }}
+            QMenu::item:selected {{ background: {COLORS['accent']}; color: white; }}
+            QMenu::separator {{ height: 1px; background: {COLORS['border']}; margin: 3px 8px; }}
+        """)
+        # (label, subdiv_per_beat)  — 0 = off
+        opts = [
+            ("Off", 0),
+            None,
+            ("Bar", -1),
+            ("Beat", 1),
+            None,
+            ("1/2 step", 2),
+            ("1/3 step", 3),
+            ("1/4 step", 4),
+            ("1/6 step", 6),
+            ("1/8 step", 8),
+            None,
+            ("1/2 beat", 2),
+            ("1/3 beat", 3),
+            ("1/4 beat", 4),
+        ]
+        # Deduplicate — FL has "step" (subdiv of beat) and "beat" (same thing)
+        # Simplify: just show all useful subdivisions
+        final_opts = [
+            ("Off", 0),
+            None,
+            ("Bar", -1),
+            ("Beat", 1),
+            None,
+            ("1/2", 2),
+            ("1/3", 3),
+            ("1/4", 4),
+            ("1/6", 6),
+            ("1/8", 8),
+            ("1/12", 12),
+            ("1/16", 16),
+        ]
+        for opt in final_opts:
+            if opt is None:
+                menu.addSeparator(); continue
+            label, subdiv = opt
+            a = menu.addAction(label)
+            a.triggered.connect(lambda _, l=label, s=subdiv: self._set_grid(l, s))
+
+        pos = self.btn_grid.mapToGlobal(self.btn_grid.rect().bottomLeft())
+        menu.exec(pos)
+
+    def _set_grid(self, label, subdiv):
+        if subdiv == 0:
+            self.waveform.set_grid(False)
+            self.btn_grid.setText("Grid: Off")
+            return
+        bpm = self.bpm_spin.value()
+        beats = self.playback.metronome.beats_per_bar
+        real_subdiv = 1 if subdiv == -1 else subdiv
+        # For "Bar" mode: we set subdiv=1 and beats_per_bar=beats (shows only bar lines)
+        if subdiv == -1:
+            self.waveform.set_grid(True, bpm, beats, 1)
+            # Hack: for bar-only, set subdiv to a fraction that only hits bars
+            # Actually easier: just set beats_per_bar=1 for drawing
+            self.waveform._grid_beats_per_bar = 1
+            self.waveform._grid_subdiv = 1
+            self.waveform.update()
+        else:
+            self.waveform.set_grid(True, bpm, beats, real_subdiv)
+        self.btn_grid.setText(f"Grid: {label}")
+
+    def _open_metronome_dialog(self):
+        metro = self.playback.metronome
+        dlg = QDialog(self)
+        dlg.setWindowTitle("Metronome Settings")
+        dlg.setFixedWidth(300)
+        dlg.setStyleSheet(f"""
+            QDialog {{ background: {COLORS['bg_panel']}; color: {COLORS['text']}; }}
+            QLabel {{ color: {COLORS['text']}; font-size: 11px; }}
+            QSpinBox {{ background: {COLORS['bg_dark']}; color: {COLORS['text']};
+                border: 1px solid {COLORS['border']}; border-radius: 4px;
+                padding: 3px 6px; font-size: 11px; }}
+            QSlider::groove:horizontal {{ background: {COLORS['bg_dark']}; height: 4px; border-radius: 2px; }}
+            QSlider::handle:horizontal {{ background: {COLORS['accent']}; width: 12px; height: 12px;
+                margin: -4px 0; border-radius: 6px; }}
+            QCheckBox {{ color: {COLORS['text']}; font-size: 11px; }}
+            QCheckBox::indicator {{ width: 16px; height: 16px; border-radius: 3px;
+                border: 1px solid {COLORS['border']}; background: {COLORS['bg_dark']}; }}
+            QCheckBox::indicator:checked {{ background: {COLORS['accent']}; border-color: {COLORS['accent']}; }}
+        """)
+        lo = QVBoxLayout(dlg); lo.setSpacing(8); lo.setContentsMargins(16, 12, 16, 12)
+
+        chk = QCheckBox("Enabled"); chk.setChecked(metro.enabled)
+        lo.addWidget(chk)
+
+        r1 = QHBoxLayout(); r1.addWidget(QLabel("BPM"))
+        bpm_s = QSpinBox(); bpm_s.setRange(20, 300); bpm_s.setValue(int(metro.bpm))
+        r1.addStretch(); r1.addWidget(bpm_s); lo.addLayout(r1)
+
+        r2 = QHBoxLayout(); r2.addWidget(QLabel("Beats / Bar"))
+        beats_s = QSpinBox(); beats_s.setRange(1, 12); beats_s.setValue(metro.beats_per_bar)
+        r2.addStretch(); r2.addWidget(beats_s); lo.addLayout(r2)
+
+        r3 = QHBoxLayout(); r3.addWidget(QLabel("Volume"))
+        vol_sl = QSlider(Qt.Orientation.Horizontal)
+        vol_sl.setRange(0, 100); vol_sl.setValue(int(metro.volume * 100))
+        vol_lbl = QLabel(f"{int(metro.volume*100)}%"); vol_lbl.setFixedWidth(36)
+        vol_sl.valueChanged.connect(lambda v: vol_lbl.setText(f"{v}%"))
+        r3.addWidget(vol_sl, stretch=1); r3.addWidget(vol_lbl); lo.addLayout(r3)
+
+        btns = QHBoxLayout()
+        for txt, slot in [("Cancel", dlg.reject), ("OK", dlg.accept)]:
+            b = QPushButton(txt); b.setFixedHeight(28)
+            b.setStyleSheet(f"QPushButton {{ background: {COLORS['button_bg']}; color: {COLORS['text']};"
+                            f" border: 1px solid {COLORS['border']}; border-radius: 4px; padding: 0 16px; }}"
+                            f"QPushButton:hover {{ background: {COLORS['accent']}; color: white; }}")
+            b.clicked.connect(slot); btns.addWidget(b)
+        btns.insertStretch(0); lo.addLayout(btns)
+
+        if dlg.exec() == QDialog.DialogCode.Accepted:
+            metro.enabled = chk.isChecked()
+            metro.set_bpm(bpm_s.value())
+            metro.set_beats(beats_s.value())
+            metro.set_volume(vol_sl.value() / 100.0)
+            self.btn_metro.setChecked(metro.enabled)
+            self.bpm_spin.setValue(int(metro.bpm))
 
     # ══════ Playback ══════
 
@@ -598,22 +799,24 @@ class MainWindow(QMainWindow):
         if not plugin:
             return
 
-        # Stop main playback to avoid stream conflicts with preview
+        # Stop playback AND close the stream to free the audio device for preview
         if self.playback.is_playing:
             self._stop()
+        self.playback.suspend_stream()
 
         s, e = self._sel_range()
         is_global = (s is None)
 
         d = plugin.dialog_class(self)
 
-        # Inject preview context — segment + process function
+        # Inject preview context — segment + process function + output device
         if is_global:
             preview_seg = self.audio_data
         else:
             preview_seg = self.audio_data[s:e]
         if preview_seg is not None and len(preview_seg) > 0:
-            d.setup_preview(preview_seg, self.sample_rate, plugin.process_fn)
+            d.setup_preview(preview_seg, self.sample_rate, plugin.process_fn,
+                            output_device=self.playback.output_device)
 
         # If global mode and we already have stored params, pre-fill
         if is_global and effect_id in self._global_effects:
@@ -622,7 +825,12 @@ class MainWindow(QMainWindow):
             except Exception:
                 pass
 
-        if d.exec() != d.DialogCode.Accepted:
+        accepted = d.exec() == d.DialogCode.Accepted
+
+        # Re-open main stream now that dialog is closed
+        self.playback.resume_stream()
+
+        if not accepted:
             return
 
         params = d.get_params()

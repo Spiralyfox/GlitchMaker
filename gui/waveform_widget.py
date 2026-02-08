@@ -39,12 +39,27 @@ class WaveformWidget(QWidget):
         self._offset: float = 0.0     # 0.0–1.0: scroll position within zoomed view
         self._max_zoom: float = 100.0
 
+        # Beat grid
+        self._grid_enabled = False
+        self._grid_bpm = 120.0
+        self._grid_beats_per_bar = 4
+        self._grid_subdiv = 1  # subdivisions per beat
+        self._grid_offset_ms = 0.0
+
         # Precompute colors
         self._wave_rgb = _parse_color(COLORS['accent'])
         self._bg_rgb = _parse_color(COLORS['bg_dark'])
         self._border_rgb = _parse_color(COLORS['border'])
         self.setMinimumHeight(120)
         self.setCursor(Qt.CursorShape.CrossCursor)
+
+    def set_grid(self, enabled, bpm=120.0, beats=4, subdiv=1, offset_ms=0.0):
+        self._grid_enabled = enabled
+        self._grid_bpm = max(20, bpm)
+        self._grid_beats_per_bar = max(1, beats)
+        self._grid_subdiv = max(1, subdiv)
+        self._grid_offset_ms = offset_ms
+        self.update()
 
     def set_audio(self, data, sr):
         self.audio_data = data
@@ -199,6 +214,49 @@ class WaveformWidget(QWidget):
             self._cache_zoom = self._zoom
             self._cache_offset = self._offset
         p.drawImage(0, 0, self._cache)
+
+        # ── Beat grid ──
+        if self._grid_enabled and self.audio_data is not None and self._grid_bpm > 0:
+            vs, ve = self._visible_range()
+            sr = self.sample_rate
+            spb = sr * 60.0 / self._grid_bpm
+            sp_sub = spb / self._grid_subdiv
+            off = int(self._grid_offset_ms * sr / 1000.0)
+
+            if sp_sub > 1:
+                bar_pen = QPen(QColor(255, 255, 255, 45), 1)
+                beat_pen = QPen(QColor(255, 255, 255, 22), 1)
+                sub_pen = QPen(QColor(255, 255, 255, 10), 1, Qt.PenStyle.DotLine)
+                font = QFont("Consolas", 7)
+                p.setFont(font)
+
+                adj_vs = vs - off
+                first_sub = int((adj_vs / sp_sub)) * sp_sub + off
+                if first_sub < vs:
+                    first_sub += int(sp_sub)
+                pos_g = first_sub
+
+                while pos_g <= ve:
+                    x = self._sample_to_x(int(pos_g))
+                    if 0 <= x <= w:
+                        beat_in_song = (pos_g - off) / spb
+                        bar_num = int(beat_in_song / self._grid_beats_per_bar)
+                        beat_in_bar = beat_in_song - bar_num * self._grid_beats_per_bar
+                        is_bar = abs(beat_in_bar) < 0.01 or abs(beat_in_bar - self._grid_beats_per_bar) < 0.01
+                        is_beat = abs(beat_in_bar - round(beat_in_bar)) < 0.01
+
+                        if is_bar:
+                            p.setPen(bar_pen)
+                            p.drawLine(x, 0, x, h)
+                            p.setPen(QColor(255, 255, 255, 55))
+                            p.drawText(x + 3, 10, str(bar_num + 1))
+                        elif is_beat:
+                            p.setPen(beat_pen)
+                            p.drawLine(x, 0, x, h)
+                        else:
+                            p.setPen(sub_pen)
+                            p.drawLine(x, 0, x, h)
+                    pos_g += sp_sub
 
         # Clip highlight (green, dashed)
         if self._clip_hl_start is not None and self._clip_hl_end is not None:

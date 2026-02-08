@@ -67,15 +67,12 @@ def _slider_float(lo_layout, label, lo_val, hi_val, default, step=0.1, decimals=
 
 class _PreviewWorker(QThread):
     """Processes effect in background thread for preview."""
-    done = pyqtSignal(object)  # numpy array or None
+    done = pyqtSignal(object)
     error = pyqtSignal(str)
 
     def __init__(self, fn, segment, sr, params, parent=None):
         super().__init__(parent)
-        self._fn = fn
-        self._seg = segment
-        self._sr = sr
-        self._params = params
+        self._fn, self._seg, self._sr, self._params = fn, segment, sr, params
 
     def run(self):
         try:
@@ -92,36 +89,34 @@ class _Base(QDialog):
         self.setWindowTitle(title); self.setFixedWidth(380); self.setStyleSheet(_SS)
         self._lo = QVBoxLayout(self); self._lo.setSpacing(8); self._lo.setContentsMargins(16, 12, 16, 12)
         t = QLabel(title); t.setStyleSheet(f"color: {COLORS['accent']}; font-size: 14px; font-weight: bold;"); self._lo.addWidget(t)
-        # Preview state
         self._pv_segment = None
         self._pv_sr = 44100
         self._pv_process_fn = None
         self._pv_worker = None
-        self._pv_stream = None
         self._pv_playing = False
+        self._pv_device = None   # will receive playback.output_device
 
     def _row(self, label): self._lo.addWidget(QLabel(label))
 
-    def setup_preview(self, segment, sr, process_fn):
-        """Inject audio context for live preview."""
+    def setup_preview(self, segment, sr, process_fn, output_device=None):
+        """Inject audio context + output device for live preview."""
         self._pv_segment = segment
         self._pv_sr = sr
         self._pv_process_fn = process_fn
+        self._pv_device = output_device
 
     def _finish(self):
         r = QHBoxLayout()
         bc = _btn("Cancel", COLORS['button_bg']); bc.clicked.connect(self.reject); r.addWidget(bc)
-        # Preview button — only shown if preview context is injected
         self._pv_btn = _btn("▶ Preview", "#2563eb")
         self._pv_btn.setFixedWidth(100)
         self._pv_btn.clicked.connect(self._toggle_preview)
-        self._pv_btn.setVisible(False)  # shown after setup_preview
+        self._pv_btn.setVisible(False)
         r.addWidget(self._pv_btn)
         ba = _btn("Apply"); ba.clicked.connect(self._on_accept); r.addWidget(ba)
         self._lo.addLayout(r)
 
     def showEvent(self, e):
-        """Show preview button if context was injected."""
         super().showEvent(e)
         if self._pv_segment is not None and self._pv_process_fn is not None:
             self._pv_btn.setVisible(True)
@@ -139,7 +134,12 @@ class _Base(QDialog):
         self._pv_btn.setText("⏳ ...")
         self._pv_btn.setEnabled(False)
         params = self.get_params()
-        worker = _PreviewWorker(self._pv_process_fn, self._pv_segment,
+        # Cap at 5 seconds max
+        seg = self._pv_segment
+        max_n = self._pv_sr * 5
+        if len(seg) > max_n:
+            seg = seg[:max_n]
+        worker = _PreviewWorker(self._pv_process_fn, seg,
                                 self._pv_sr, params, self)
         self._pv_worker = worker
         worker.done.connect(self._on_preview_ready)
@@ -149,102 +149,64 @@ class _Base(QDialog):
     def _on_preview_ready(self, result):
         self._pv_worker = None
         if result is None:
-            self._pv_btn.setText("▶ Preview")
-            self._pv_btn.setEnabled(True)
-            return
+            self._pv_btn.setText("▶ Preview"); self._pv_btn.setEnabled(True); return
         try:
             import sounddevice as sd
             audio = np.asarray(result, dtype=np.float32)
+            audio = np.nan_to_num(audio, nan=0.0, posinf=1.0, neginf=-1.0)
+            audio = np.clip(audio, -1.0, 1.0)
             if audio.ndim == 1:
                 audio = np.column_stack([audio, audio])
-            elif audio.shape[1] > 2:
+            elif audio.ndim > 1 and audio.shape[1] > 2:
                 audio = audio[:, :2]
-            # Stop any previous stream
-            if self._pv_stream is not None:
-                try: self._pv_stream.stop(); self._pv_stream.close()
-                except: pass
-            self._pv_stream = sd.OutputStream(
-                samplerate=self._pv_sr, channels=audio.shape[1],
-                dtype='float32', blocksize=1024)
-            self._pv_pos = 0
-            self._pv_audio = audio
-            self._pv_stream.start()
-            import threading
+            if len(audio) == 0:
+                self._pv_btn.setText("▶ Preview"); self._pv_btn.setEnabled(True); return
+            # sd.play — simple, reliable, uses the SAME device as main playback
+            sd.stop()
+            sd.play(audio, samplerate=self._pv_sr, device=self._pv_device)
             self._pv_playing = True
-            self._pv_btn.setText("⏹ Stop")
-            self._pv_btn.setEnabled(True)
-            def _writer():
-                try:
-                    bs = 1024
-                    while self._pv_pos < len(self._pv_audio) and self._pv_playing:
-                        chunk = self._pv_audio[self._pv_pos:self._pv_pos + bs]
-                        if len(chunk) == 0:
-                            break
-                        self._pv_stream.write(chunk)
-                        self._pv_pos += len(chunk)
-                except Exception:
-                    pass
-                finally:
-                    self._pv_playing = False
-            self._pv_write_thread = threading.Thread(target=_writer, daemon=True)
-            self._pv_write_thread.start()
-            # Start timer to detect when preview finishes
+            self._pv_btn.setText("⏹ Stop"); self._pv_btn.setEnabled(True)
+            # Auto-reset when finished
+            dur_ms = int(len(audio) / self._pv_sr * 1000) + 300
             self._pv_timer = QTimer(self)
-            self._pv_timer.setInterval(200)
-            self._pv_timer.timeout.connect(self._poll_preview)
-            self._pv_timer.start()
+            self._pv_timer.setSingleShot(True)
+            self._pv_timer.timeout.connect(self._on_preview_done)
+            self._pv_timer.start(dur_ms)
         except Exception as ex:
             print(f"[preview] playback error: {ex}")
-            self._pv_btn.setText("▶ Preview")
-            self._pv_btn.setEnabled(True)
+            self._pv_btn.setText("▶ Preview"); self._pv_btn.setEnabled(True)
             self._pv_playing = False
 
-    def _poll_preview(self):
-        """Auto-reset button when preview playback finishes."""
-        if not self._pv_playing:
-            if hasattr(self, '_pv_timer') and self._pv_timer:
-                self._pv_timer.stop()
-            self._pv_btn.setText("▶ Preview")
-            self._pv_btn.setEnabled(True)
-            # Clean up stream
-            if self._pv_stream is not None:
-                try: self._pv_stream.stop(); self._pv_stream.close()
-                except: pass
-                self._pv_stream = None
+    def _on_preview_done(self):
+        self._pv_playing = False
+        self._pv_btn.setText("▶ Preview"); self._pv_btn.setEnabled(True)
 
     def _on_preview_error(self, msg):
         self._pv_worker = None
-        self._pv_btn.setText("▶ Preview")
-        self._pv_btn.setEnabled(True)
+        self._pv_btn.setText("▶ Preview"); self._pv_btn.setEnabled(True)
         print(f"[preview] error: {msg}")
 
     def _stop_preview(self):
         self._pv_playing = False
         if hasattr(self, '_pv_timer') and self._pv_timer:
             self._pv_timer.stop()
-        if self._pv_stream is not None:
-            try: self._pv_stream.stop(); self._pv_stream.close()
-            except: pass
-            self._pv_stream = None
+        try:
+            import sounddevice as sd; sd.stop()
+        except Exception: pass
         if self._pv_worker is not None:
             try: self._pv_worker.quit(); self._pv_worker.wait(500)
             except: pass
             self._pv_worker = None
-        self._pv_btn.setText("▶ Preview")
-        self._pv_btn.setEnabled(True)
+        self._pv_btn.setText("▶ Preview"); self._pv_btn.setEnabled(True)
 
     def _on_accept(self):
-        """Stop preview then accept."""
-        self._stop_preview()
-        self.accept()
+        self._stop_preview(); self.accept()
 
     def reject(self):
-        self._stop_preview()
-        super().reject()
+        self._stop_preview(); super().reject()
 
     def closeEvent(self, e):
-        self._stop_preview()
-        super().closeEvent(e)
+        self._stop_preview(); super().closeEvent(e)
 
     def get_params(self) -> dict: return {}
     def set_params(self, p: dict): pass
