@@ -34,4 +34,4 @@ def time_stretch(audio_data: np.ndarray, start: int, end: int,
     
     stretched = apply_micro_fade(stretched, fade_samples=64)
     
-    return np.clip(np.concatenate([result_before, stretched, result_after], axis=0), -1.0, 1.0)
+    return np.concatenate([result_before, stretched, result_after], axis=0)

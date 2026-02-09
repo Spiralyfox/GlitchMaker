@@ -1,6 +1,8 @@
-"""Waveform display — zoom via mouse wheel, pixel buffer rendering, anchor cursor."""
+"""Waveform display — zoom via mouse wheel, pixel buffer rendering, anchor cursor, markers."""
+from utils.logger import get_logger
+_log = get_logger("waveform")
 import numpy as np
-from PyQt6.QtWidgets import QWidget, QScrollBar
+from PyQt6.QtWidgets import QWidget, QScrollBar, QInputDialog
 from PyQt6.QtCore import Qt, pyqtSignal, QPointF
 from PyQt6.QtGui import QPainter, QColor, QBrush, QPen, QImage, QFont, QPolygonF
 from utils.config import COLORS
@@ -18,9 +20,12 @@ class WaveformWidget(QWidget):
     selection_changed = pyqtSignal(int, int)  # drag → selection
     drag_started = pyqtSignal()  # mouse down starts a drag
     zoom_changed = pyqtSignal(float, float)  # (zoom, offset) — for external scrollbar
+    marker_added = pyqtSignal(str, int)  # (name, position)
+    cut_silence_requested = pyqtSignal(int, int)  # (start, end) — replace with silence
+    cut_splice_requested = pyqtSignal(int, int)   # (start, end) — remove and splice
 
     def __init__(self, parent=None):
-        """Initialise le widget waveform avec zoom, grille, selection."""
+        """Initialise le widget waveform avec zoom, grille, selection, marqueurs."""
         super().__init__(parent)
         self.audio_data: np.ndarray | None = None
         self.sample_rate = 44100
@@ -48,6 +53,12 @@ class WaveformWidget(QWidget):
         self._grid_beats_per_bar = 4
         self._grid_subdiv = 1
         self._grid_offset_ms = 0.0
+
+        # Markers (step 36)
+        self._markers: list[dict] = []  # [{name, position, color}]
+        self._marker_colors = ["#ff6b6b", "#ffd93d", "#6bcb77", "#4d96ff",
+                                "#ff85a1", "#48bfe3", "#e07c24", "#b5179e"]
+        self._marker_idx = 0
 
         # Precompute colors
         self._wave_rgb = _parse_color(COLORS['accent'])
@@ -87,8 +98,9 @@ class WaveformWidget(QWidget):
         self.update()
 
     def set_selection(self, s, e):
-        """Definit la zone de selection (debut, fin en samples)."""
-        self.selection_start, self.selection_end = s, e
+        """Definit la zone de selection (debut, fin en samples). Accepte None."""
+        self.selection_start = s if s is not None else None
+        self.selection_end = e if e is not None else None
         self.update()
 
     def set_clip_highlight(self, s, e):
@@ -108,6 +120,31 @@ class WaveformWidget(QWidget):
         self._clip_hl_start = self._clip_hl_end = None
         self.update()
 
+    def clear_selection(self):
+        """Efface la selection sans toucher au reste."""
+        self.selection_start = self.selection_end = None
+        self.update()
+
+    @property
+    def bpm(self):
+        return self._grid_bpm
+
+    @bpm.setter
+    def bpm(self, val):
+        self._grid_bpm = max(20, val)
+        self._cache = None
+        self.update()
+
+    @property
+    def grid_subdivisions(self):
+        return self._grid_subdiv
+
+    @grid_subdivisions.setter
+    def grid_subdivisions(self, val):
+        self._grid_subdiv = max(1, val)
+        self._cache = None
+        self.update()
+
     def reset_zoom(self):
         """Reset zoom to full view."""
         self._zoom = 1.0
@@ -115,6 +152,50 @@ class WaveformWidget(QWidget):
         self._cache = None
         self.update()
         self.zoom_changed.emit(self._zoom, self._offset)
+
+    # ── Markers (step 36) ──
+
+    def add_marker(self, name: str, position: int, color: str | None = None):
+        """Add a named marker at a sample position."""
+        if color is None:
+            color = self._marker_colors[self._marker_idx % len(self._marker_colors)]
+            self._marker_idx += 1
+        self._markers.append({"name": name, "position": position, "color": color})
+        self.marker_added.emit(name, position)
+        self.update()
+
+    def remove_marker(self, name: str):
+        """Remove a marker by name."""
+        self._markers = [m for m in self._markers if m["name"] != name]
+        self.update()
+
+    def clear_markers(self):
+        """Remove all markers."""
+        self._markers.clear()
+        self._marker_idx = 0
+        self.update()
+
+    def get_markers(self) -> list[dict]:
+        """Return sorted marker list."""
+        return sorted(self._markers, key=lambda m: m["position"])
+
+    def next_marker(self) -> int | None:
+        """Return position of next marker after current anchor/playhead."""
+        pos = self._anchor if self._anchor is not None else self._playhead
+        markers = sorted(self._markers, key=lambda m: m["position"])
+        for m in markers:
+            if m["position"] > pos + 100:
+                return m["position"]
+        return markers[0]["position"] if markers else None
+
+    def prev_marker(self) -> int | None:
+        """Return position of previous marker before current anchor/playhead."""
+        pos = self._anchor if self._anchor is not None else self._playhead
+        markers = sorted(self._markers, key=lambda m: m["position"], reverse=True)
+        for m in markers:
+            if m["position"] < pos - 100:
+                return m["position"]
+        return markers[0]["position"] if markers else None
 
     # ── Zoom coordinate mapping ──
 
@@ -183,6 +264,66 @@ class WaveformWidget(QWidget):
                     self.selection_changed.emit(s, en)
             self.update()
 
+    def contextMenuEvent(self, e):
+        """Right-click: add marker, or cut if inside a selection."""
+        if self.audio_data is None:
+            return
+        pos = self._pos_to_sample(e.pos().x())
+        from PyQt6.QtWidgets import QMenu
+        menu = QMenu(self)
+        menu.setStyleSheet(
+            f"QMenu {{ background: {COLORS['bg_panel']}; color: {COLORS['text']};"
+            f" border: 1px solid {COLORS['border']}; }}"
+            f"QMenu::item {{ padding: 4px 16px; }}"
+            f"QMenu::item:selected {{ background: {COLORS['accent']}; color: white; }}")
+
+        # ── Cut options if inside a red selection ──
+        a_cut_silence = None
+        a_cut_splice = None
+        has_sel = (self.selection_start is not None and self.selection_end is not None
+                   and abs(self.selection_end - self.selection_start) > 10)
+        if has_sel:
+            s = min(self.selection_start, self.selection_end)
+            en = max(self.selection_start, self.selection_end)
+            if s <= pos <= en:
+                a_cut_silence = menu.addAction("✂ " + t("cut.replace_silence"))
+                a_cut_splice = menu.addAction("✂ " + t("cut.splice"))
+                menu.addSeparator()
+
+        # ── Marker options ──
+        a_add = menu.addAction("📌 " + t("marker.add_title"))
+        a_del = None
+        near = None
+        for m in self._markers:
+            mx = self._sample_to_x(m["position"])
+            if abs(mx - e.pos().x()) < 10:
+                near = m; break
+        if near:
+            a_del = menu.addAction(f"✕ Remove '{near['name']}'")
+        menu.addSeparator()
+        a_clear = menu.addAction(t("marker.clear_all"))
+
+        action = menu.exec(e.globalPos())
+        if action is None:
+            return
+        if action == a_cut_silence and has_sel:
+            s = min(self.selection_start, self.selection_end)
+            en = max(self.selection_start, self.selection_end)
+            self.cut_silence_requested.emit(s, en)
+        elif action == a_cut_splice and has_sel:
+            s = min(self.selection_start, self.selection_end)
+            en = max(self.selection_start, self.selection_end)
+            self.cut_splice_requested.emit(s, en)
+        elif action == a_add:
+            name, ok = QInputDialog.getText(self, "Marker", "Marker name:",
+                                            text=f"M{len(self._markers)+1}")
+            if ok and name:
+                self.add_marker(name, pos)
+        elif action == a_del and near:
+            self.remove_marker(near["name"])
+        elif action == a_clear:
+            self.clear_markers()
+
     def wheelEvent(self, e):
         """Mouse wheel → zoom in/out, centered on cursor position."""
         if self.audio_data is None:
@@ -220,117 +361,140 @@ class WaveformWidget(QWidget):
     def paintEvent(self, e):
         """Dessine la waveform, grille, selection, playhead, curseur."""
         p = QPainter(self)
-        w, h = self.width(), self.height()
-        p.fillRect(0, 0, w, h, QColor(COLORS['bg_dark']))
+        try:
+            w, h = self.width(), self.height()
+            p.fillRect(0, 0, w, h, QColor(COLORS['bg_dark']))
 
-        if self.audio_data is None or len(self.audio_data) == 0:
-            p.setPen(QColor(COLORS['text_dim']))
-            p.setFont(QFont("Segoe UI", 11))
-            p.drawText(0, 0, w, h, Qt.AlignmentFlag.AlignCenter, t("waveform.empty"))
+            if self.audio_data is None or len(self.audio_data) == 0:
+                p.setPen(QColor(COLORS['text_dim']))
+                p.setFont(QFont("Segoe UI", 11))
+                p.drawText(0, 0, w, h, Qt.AlignmentFlag.AlignCenter, t("waveform.empty"))
+                return
+
+            # Cache waveform image
+            if (self._cache is None or self._cache_w != w or self._cache_h != h
+                    or self._cache_zoom != self._zoom or self._cache_offset != self._offset):
+                self._cache = self._render_wave(w, h)
+                self._cache_w = w
+                self._cache_h = h
+                self._cache_zoom = self._zoom
+                self._cache_offset = self._offset
+            p.drawImage(0, 0, self._cache)
+
+            # ── Beat grid ──
+            if self._grid_enabled and self.audio_data is not None and self._grid_bpm > 0:
+                vs, ve = self._visible_range()
+                sr = self.sample_rate
+                spb = sr * 60.0 / self._grid_bpm
+                sp_sub = spb / self._grid_subdiv
+                off = int(self._grid_offset_ms * sr / 1000.0)
+
+                if sp_sub > 1:
+                    # High-visibility grid colors
+                    bar_pen = QPen(QColor(255, 255, 255, 80), 1)
+                    beat_pen = QPen(QColor(255, 255, 255, 45), 1)
+                    sub_pen = QPen(QColor(255, 255, 255, 28), 1)
+                    font = QFont("Consolas", 7)
+                    p.setFont(font)
+
+                    adj_vs = vs - off
+                    first_sub = int((adj_vs / sp_sub)) * sp_sub + off
+                    if first_sub < vs:
+                        first_sub += int(sp_sub)
+                    gp = first_sub
+
+                    while gp <= ve:
+                        x = self._sample_to_x(int(gp))
+                        if 0 <= x <= w:
+                            beat_in_song = (gp - off) / spb
+                            bar_num = int(beat_in_song / self._grid_beats_per_bar)
+                            beat_in_bar = beat_in_song - bar_num * self._grid_beats_per_bar
+                            is_bar = abs(beat_in_bar) < 0.01 or abs(beat_in_bar - self._grid_beats_per_bar) < 0.01
+                            is_beat = abs(beat_in_bar - round(beat_in_bar)) < 0.01
+
+                            if is_bar:
+                                p.setPen(bar_pen)
+                                p.drawLine(x, 0, x, h)
+                                p.setPen(QColor(255, 255, 255, 70))
+                                p.drawText(x + 3, 10, str(bar_num + 1))
+                            elif is_beat:
+                                p.setPen(beat_pen)
+                                p.drawLine(x, 0, x, h)
+                            else:
+                                p.setPen(sub_pen)
+                                p.drawLine(x, 0, x, h)
+                        gp += sp_sub
+
+            # Clip highlight (green, dashed)
+            if self._clip_hl_start is not None and self._clip_hl_end is not None:
+                x1 = self._sample_to_x(self._clip_hl_start)
+                x2 = self._sample_to_x(self._clip_hl_end)
+                if x2 > 0 and x1 < w:
+                    p.fillRect(max(x1, 0), 0, min(x2, w) - max(x1, 0), h, QColor(22, 199, 154, 30))
+                    p.setPen(QPen(QColor(COLORS['clip_highlight']), 1, Qt.PenStyle.DashLine))
+                    if 0 <= x1 <= w: p.drawLine(x1, 0, x1, h)
+                    if 0 <= x2 <= w: p.drawLine(x2, 0, x2, h)
+
+            # Selection (red)
+            if self.selection_start is not None and self.selection_end is not None:
+                s = min(self.selection_start, self.selection_end)
+                en = max(self.selection_start, self.selection_end)
+                x1, x2 = self._sample_to_x(s), self._sample_to_x(en)
+                if x2 > 0 and x1 < w:
+                    p.fillRect(max(x1, 0), 0, min(x2, w) - max(x1, 0), h, QColor(233, 69, 96, 40))
+                    p.setPen(QPen(QColor(COLORS['selection']), 1))
+                    if 0 <= x1 <= w: p.drawLine(x1, 0, x1, h)
+                    if 0 <= x2 <= w: p.drawLine(x2, 0, x2, h)
+
+            # Blue anchor cursor
+            has_selection = (self.selection_start is not None and self.selection_end is not None
+                             and abs(self.selection_end - self.selection_start) > 10)
+            if self._anchor is not None and not has_selection:
+                ax = self._sample_to_x(self._anchor)
+                if -5 <= ax <= w + 5:
+                    p.setPen(QPen(QColor("#3b82f6"), 2))
+                    p.drawLine(ax, 0, ax, h)
+                    p.setBrush(QColor("#3b82f6"))
+                    p.setPen(Qt.PenStyle.NoPen)
+                    tri = QPolygonF([QPointF(ax - 4, 0), QPointF(ax + 4, 0), QPointF(ax, 6)])
+                    p.drawPolygon(tri)
+
+            # Green playhead
+            px = self._sample_to_x(self._playhead)
+            if -2 <= px <= w + 2:
+                p.setPen(QPen(QColor(COLORS['playhead']), 2))
+                p.drawLine(px, 0, px, h)
+
+            # ── Markers (step 36) ──
+            if self._markers:
+                marker_font = QFont("Segoe UI", 7, QFont.Weight.Bold)
+                p.setFont(marker_font)
+                for m in self._markers:
+                    mx = self._sample_to_x(m["position"])
+                    if -5 <= mx <= w + 5:
+                        mc = QColor(m["color"])
+                        # Vertical line
+                        p.setPen(QPen(mc, 1, Qt.PenStyle.DashDotLine))
+                        p.drawLine(mx, 0, mx, h)
+                        # Flag at top
+                        p.setPen(Qt.PenStyle.NoPen)
+                        p.setBrush(mc)
+                        flag_w = min(50, max(20, len(m["name"]) * 6 + 8))
+                        p.drawRoundedRect(mx, 0, flag_w, 14, 2, 2)
+                        # Text
+                        p.setPen(QColor("white"))
+                        p.drawText(mx + 3, 10, m["name"])
+
+            # Zoom level indicator (bottom-right text)
+            if self._zoom > 1.01:
+                p.setPen(QColor(COLORS['text_dim']))
+                p.setFont(QFont("Consolas", 8))
+                p.drawText(w - 60, h - 4, f"x{self._zoom:.1f}")
+
+        except Exception as ex:
+            _log.warning("Waveform paintEvent: %s", ex)
+        finally:
             p.end()
-            return
-
-        # Cache waveform image
-        if (self._cache is None or self._cache_w != w or self._cache_h != h
-                or self._cache_zoom != self._zoom or self._cache_offset != self._offset):
-            self._cache = self._render_wave(w, h)
-            self._cache_w = w
-            self._cache_h = h
-            self._cache_zoom = self._zoom
-            self._cache_offset = self._offset
-        p.drawImage(0, 0, self._cache)
-
-        # ── Beat grid ──
-        if self._grid_enabled and self.audio_data is not None and self._grid_bpm > 0:
-            vs, ve = self._visible_range()
-            sr = self.sample_rate
-            spb = sr * 60.0 / self._grid_bpm
-            sp_sub = spb / self._grid_subdiv
-            off = int(self._grid_offset_ms * sr / 1000.0)
-
-            if sp_sub > 1:
-                # High-visibility grid colors
-                bar_pen = QPen(QColor(255, 255, 255, 80), 1)
-                beat_pen = QPen(QColor(255, 255, 255, 45), 1)
-                sub_pen = QPen(QColor(255, 255, 255, 28), 1)
-                font = QFont("Consolas", 7)
-                p.setFont(font)
-
-                adj_vs = vs - off
-                first_sub = int((adj_vs / sp_sub)) * sp_sub + off
-                if first_sub < vs:
-                    first_sub += int(sp_sub)
-                gp = first_sub
-
-                while gp <= ve:
-                    x = self._sample_to_x(int(gp))
-                    if 0 <= x <= w:
-                        beat_in_song = (gp - off) / spb
-                        bar_num = int(beat_in_song / self._grid_beats_per_bar)
-                        beat_in_bar = beat_in_song - bar_num * self._grid_beats_per_bar
-                        is_bar = abs(beat_in_bar) < 0.01 or abs(beat_in_bar - self._grid_beats_per_bar) < 0.01
-                        is_beat = abs(beat_in_bar - round(beat_in_bar)) < 0.01
-
-                        if is_bar:
-                            p.setPen(bar_pen)
-                            p.drawLine(x, 0, x, h)
-                            p.setPen(QColor(255, 255, 255, 70))
-                            p.drawText(x + 3, 10, str(bar_num + 1))
-                        elif is_beat:
-                            p.setPen(beat_pen)
-                            p.drawLine(x, 0, x, h)
-                        else:
-                            p.setPen(sub_pen)
-                            p.drawLine(x, 0, x, h)
-                    gp += sp_sub
-
-        # Clip highlight (green, dashed)
-        if self._clip_hl_start is not None and self._clip_hl_end is not None:
-            x1 = self._sample_to_x(self._clip_hl_start)
-            x2 = self._sample_to_x(self._clip_hl_end)
-            if x2 > 0 and x1 < w:
-                p.fillRect(max(x1, 0), 0, min(x2, w) - max(x1, 0), h, QColor(22, 199, 154, 30))
-                p.setPen(QPen(QColor(COLORS['clip_highlight']), 1, Qt.PenStyle.DashLine))
-                if 0 <= x1 <= w: p.drawLine(x1, 0, x1, h)
-                if 0 <= x2 <= w: p.drawLine(x2, 0, x2, h)
-
-        # Selection (red)
-        if self.selection_start is not None and self.selection_end is not None:
-            s = min(self.selection_start, self.selection_end)
-            en = max(self.selection_start, self.selection_end)
-            x1, x2 = self._sample_to_x(s), self._sample_to_x(en)
-            if x2 > 0 and x1 < w:
-                p.fillRect(max(x1, 0), 0, min(x2, w) - max(x1, 0), h, QColor(233, 69, 96, 40))
-                p.setPen(QPen(QColor(COLORS['selection']), 1))
-                if 0 <= x1 <= w: p.drawLine(x1, 0, x1, h)
-                if 0 <= x2 <= w: p.drawLine(x2, 0, x2, h)
-
-        # Blue anchor cursor
-        has_selection = (self.selection_start is not None and self.selection_end is not None
-                         and abs(self.selection_end - self.selection_start) > 10)
-        if self._anchor is not None and not has_selection:
-            ax = self._sample_to_x(self._anchor)
-            if -5 <= ax <= w + 5:
-                p.setPen(QPen(QColor("#3b82f6"), 2))
-                p.drawLine(ax, 0, ax, h)
-                p.setBrush(QColor("#3b82f6"))
-                p.setPen(Qt.PenStyle.NoPen)
-                tri = QPolygonF([QPointF(ax - 4, 0), QPointF(ax + 4, 0), QPointF(ax, 6)])
-                p.drawPolygon(tri)
-
-        # Green playhead
-        px = self._sample_to_x(self._playhead)
-        if -2 <= px <= w + 2:
-            p.setPen(QPen(QColor(COLORS['playhead']), 2))
-            p.drawLine(px, 0, px, h)
-
-        # Zoom level indicator (bottom-right text)
-        if self._zoom > 1.01:
-            p.setPen(QColor(COLORS['text_dim']))
-            p.setFont(QFont("Consolas", 8))
-            p.drawText(w - 60, h - 4, f"x{self._zoom:.1f}")
-
-        p.end()
 
     def _render_wave(self, w, h):
         """Render waveform of the visible range using numpy pixel buffer."""

@@ -63,7 +63,7 @@ class _IconWidget(QWidget):
 class CatalogDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Catalog")
+        self.setWindowTitle(t("catalog.window_title"))
         self.setMinimumSize(520, 600)
         self.setStyleSheet(f"QDialog {{ background: {COLORS['bg_medium']}; }}")
 

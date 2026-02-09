@@ -9,15 +9,14 @@ Each user plugin is a .py file in plugins/user_plugins/ that defines:
 Optional: a .json file with same stem for translations:
   {"en": {"name": "...", "short": "..."}, "fr": {"name": "...", "short": "..."}}
 """
+from utils.logger import get_logger
+_log = get_logger("user_loader")
 
 import os
 import sys
 import json
 import importlib.util
 import traceback
-import logging
-
-log = logging.getLogger(__name__)
 
 # Resolve user plugins directory (works both normal and frozen)
 if getattr(sys, 'frozen', False):
@@ -55,8 +54,8 @@ def _load_registry() -> list:
         try:
             with open(_REGISTRY_PATH, "r", encoding="utf-8") as f:
                 return json.load(f)
-        except Exception as e:
-            log.debug("ignored: %s", e)
+        except Exception as _ex:
+            _log.debug("Non-critical: %s", _ex)
     return []
 
 
@@ -283,8 +282,8 @@ def load_user_plugins() -> dict:
                     try:
                         with open(jp, "r", encoding="utf-8") as f:
                             _user_translations[pid] = json.load(f)
-                    except Exception as e:
-                        log.debug("ignored: %s", e)
+                    except Exception as _ex:
+                        _log.debug("Non-critical: %s", _ex)
 
             # Create wrapper function
             def _make_wrapper(fn):
@@ -310,7 +309,7 @@ def load_user_plugins() -> dict:
             plugins[pid] = plugin
 
         except Exception as ex:
-            print(f"[user_plugins] Failed to load '{pid}': {ex}")
+            _log.error("Failed to load '%s': %s", pid, ex)
             traceback.print_exc()
 
     return plugins

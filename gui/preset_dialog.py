@@ -281,10 +281,10 @@ class PresetCreateDialog(QDialog):
         """Sauvegarde le preset edite."""
         name = self.name_inp.text().strip()
         if not name:
-            QMessageBox.warning(self, "Glitch Maker", "Name is required.")
+            QMessageBox.warning(self, "Glitch Maker", t("preset.name_required"))
             return
         if self.eff_list.count() == 0:
-            QMessageBox.warning(self, "Glitch Maker", "Add at least one effect.")
+            QMessageBox.warning(self, "Glitch Maker", t("preset.effects_required"))
             return
         tags = [self.tag_list.item(i).text() for i in range(self.tag_list.count())]
         effects = [

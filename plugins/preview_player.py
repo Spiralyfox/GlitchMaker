@@ -2,7 +2,9 @@
 
 import os
 import threading
+from utils.logger import get_logger
 
+_log = get_logger("preview")
 _playing = False
 _stop_flag = False
 
@@ -39,7 +41,7 @@ def play_preview(filepath: str):
             sd.play(data, sr)
             sd.wait()
         except Exception as ex:
-            print(f"[preview] {ex}")
+            _log.error("Playback error: %s", ex)
         finally:
             _playing = False
 

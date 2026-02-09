@@ -97,4 +97,4 @@ def quick_stutter(audio_data: np.ndarray, start: int, end: int,
     
     before = audio_data[:start]
     after = audio_data[end:]
-    return np.clip(np.concatenate([before, stuttered, after], axis=0), -1.0, 1.0)
+    return np.concatenate([before, stuttered, after], axis=0)

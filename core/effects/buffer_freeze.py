@@ -44,4 +44,4 @@ def buffer_freeze(audio_data: np.ndarray, start: int, end: int,
         )
 
     result[start:end] = frozen
-    return np.clip(result, -1.0, 1.0)
+    return result

@@ -1,3 +1,5 @@
+from utils.logger import get_logger
+_log = get_logger("loader")
 """
 Plugin loader — all effect plugins with metadata, dialogs, and process wrappers.
 Each wrapper handles param name mapping between dialog output and effect function.
@@ -91,14 +93,13 @@ def _w_pan(audio_data, start, end, sr=44100, **kw):
                       pan=kw.get("pan", 0.0), mono=kw.get("mono", False))
 
 def _w_pitch_shift(audio_data, start, end, sr=44100, **kw):
-    """Wrapper : applique l effet Pitch Shift (avec option preserve formants)."""
+    """Wrapper : applique l effet Pitch Shift."""
     from core.effects.pitch_shift import pitch_shift, pitch_shift_simple
     if kw.get("simple", False):
         return pitch_shift_simple(audio_data, start, end,
                                   semitones=kw.get("semitones", 0), sr=sr)
     return pitch_shift(audio_data, start, end,
-                       semitones=kw.get("semitones", 0), sr=sr,
-                       preserve_formants=kw.get("preserve_formants", False))
+                       semitones=kw.get("semitones", 0), sr=sr)
 
 def _w_time_stretch(audio_data, start, end, sr=44100, **kw):
     """Wrapper : applique l effet Time Stretch."""
@@ -174,16 +175,12 @@ def _w_ring_mod(audio_data, start, end, sr=44100, **kw):
                     mix=kw.get("mix", 0.5), sr=sr)
 
 def _w_delay(audio_data, start, end, sr=44100, **kw):
-    """Wrapper : applique l effet Delay (normal/ping-pong, sync BPM, filtre feedback)."""
+    """Wrapper : applique l effet Delay."""
     from core.effects.delay import delay
     return delay(audio_data, start, end,
-                 delay_ms=kw.get("delay_ms", 300),
+                 delay_ms=kw.get("delay_ms", 250),
                  feedback=kw.get("feedback", 0.4),
-                 mix=kw.get("mix", 0.5), sr=sr,
-                 mode=kw.get("mode", "normal"),
-                 sync_bpm=kw.get("sync_bpm", 0.0),
-                 sync_note=kw.get("sync_note", "1/4"),
-                 filter_tone=kw.get("filter_tone", 1.0))
+                 mix=kw.get("mix", 0.5), sr=sr)
 
 def _w_vinyl(audio_data, start, end, sr=44100, **kw):
     """Wrapper : applique l effet Vinyl Crackle."""
@@ -241,15 +238,13 @@ def _w_wave_ondulee(audio_data, start, end, sr=44100, **kw):
                         stereo_offset=kw.get("stereo_offset", True))
 
 def _w_autotune(audio_data, start, end, sr=44100, **kw):
-    """Wrapper : applique l effet Autotune (pitch correction + formant shift)."""
+    """Wrapper : applique l effet Autotune."""
     from core.effects.autotune import autotune
     return autotune(audio_data, start, end, sr=sr,
                     speed=kw.get("speed", 0.8),
                     key=kw.get("key", "C"),
                     scale=kw.get("scale", "chromatic"),
-                    mix=kw.get("mix", 1.0),
-                    formant_shift=kw.get("formant_shift", 0.0),
-                    hard_tune=kw.get("hard_tune", False))
+                    mix=kw.get("mix", 1.0))
 
 def _w_robot(audio_data, start, end, sr=44100, **kw):
     """Wrapper : applique l effet Robotic Voice."""
@@ -365,7 +360,7 @@ def load_plugins(force_reload=False):
             user = load_user_plugins()
             _plugins_cache.update(user)
         except Exception as ex:
-            print(f"[loader] user plugins error: {ex}")
+            _log.error("User plugins error: %s", ex)
     return _plugins_cache
 
 

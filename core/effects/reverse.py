@@ -16,4 +16,4 @@ def reverse(audio_data: np.ndarray, start: int, end: int) -> np.ndarray:
         result[start:start+fade] = apply_micro_fade(
             result[start:start+fade], fade_samples=fade
         )
-    return np.clip(result, -1.0, 1.0)
+    return result

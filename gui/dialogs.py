@@ -120,6 +120,18 @@ class AboutDialog(QDialog):
         gh_hint.setAlignment(Qt.AlignmentFlag.AlignCenter); gh_hint.setWordWrap(True)
         lo.addWidget(gh_hint)
 
+        lo.addSpacing(6)
+        bug_lbl = QLabel(t("about.bug_report"))
+        bug_lbl.setStyleSheet(f"color: {COLORS['text']}; font-size: 10px;")
+        bug_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter); bug_lbl.setWordWrap(True)
+        lo.addWidget(bug_lbl)
+
+        issue_url = "https://github.com/Spiralyfox"
+        issue_lbl = QLabel(f'<a href="{issue_url}" style="color: {COLORS["accent"]};">{issue_url}</a>')
+        issue_lbl.setOpenExternalLinks(True)
+        issue_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        lo.addWidget(issue_lbl)
+
         lo.addStretch()
 
         # Credits

@@ -21,4 +21,4 @@ def tremolo(audio_data: np.ndarray, start: int, end: int,
     if seg.ndim == 2:
         envelope = envelope.reshape(-1, 1)
     out[start:end] = (seg * envelope).astype(np.float32)
-    return np.clip(out, -1.0, 1.0)
+    return out

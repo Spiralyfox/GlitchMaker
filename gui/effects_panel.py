@@ -1,32 +1,39 @@
 """Effects panel — sidebar with search, effects & presets.
 Redesigned: better buttons with hover tooltips, collapsible preset sections (closed by default).
+Features: favorites (★), right-click quick apply.
 """
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
-    QLineEdit, QScrollArea, QFrame, QToolTip, QGraphicsDropShadowEffect
+    QLineEdit, QScrollArea, QFrame, QToolTip, QGraphicsDropShadowEffect,
+    QMenu
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QPoint
 from PyQt6.QtGui import QCursor, QColor, QFont, QPainter, QBrush, QPen
 
-from utils.config import COLORS
+from utils.translator import t
+from utils.config import COLORS, TAG_COLORS, FAVORITE_STAR, load_settings, save_settings
 from utils.translator import get_language, t
 from plugins.loader import load_plugins, plugins_grouped
 from plugins import preview_player
 
 
-# ═══ Effect Button (redesigned) ═══
+# ═══ Effect Button (redesigned with favorites + right-click + checkbox) ═══
 
 class EffectButton(QWidget):
     """Styled effect button with colored badge, name, and hover tooltip."""
     clicked = pyqtSignal()
+    right_clicked = pyqtSignal(str)       # step 38: right-click preview
+    fav_toggled = pyqtSignal(str, bool)   # step 37: favorite toggle
 
-    def __init__(self, letter, color, name, eid, short_desc="", preview_path=None, parent=None):
+    def __init__(self, letter, color, name, eid, short_desc="", preview_path=None,
+                 is_fav=False, parent=None):
         """Initialise le widget EffectButton."""
         super().__init__(parent)
         self._eid = eid
         self._preview_path = preview_path
         self._color = color
         self._hovered = False
+        self._is_fav = is_fav
         self.setFixedHeight(34)
         self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         if short_desc:
@@ -34,7 +41,7 @@ class EffectButton(QWidget):
 
         lo = QHBoxLayout(self)
         lo.setContentsMargins(6, 2, 6, 2)
-        lo.setSpacing(8)
+        lo.setSpacing(6)
 
         # Colored icon badge
         self._icon = QLabel(letter)
@@ -51,6 +58,17 @@ class EffectButton(QWidget):
         self._name.setStyleSheet(f"color: {COLORS['text']}; font-size: 11px;")
         lo.addWidget(self._name, stretch=1)
 
+        # Favorite star (step 37)
+        self._fav_btn = QPushButton("★" if is_fav else "☆")
+        self._fav_btn.setFixedSize(20, 20)
+        self._fav_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self._fav_btn.setStyleSheet(
+            f"QPushButton {{ background: transparent; color: {FAVORITE_STAR if is_fav else COLORS['text_dim']};"
+            f" border: none; font-size: 13px; padding: 0; }}"
+            f"QPushButton:hover {{ color: {FAVORITE_STAR}; }}")
+        self._fav_btn.clicked.connect(self._toggle_fav)
+        lo.addWidget(self._fav_btn)
+
         # Preview button (hidden by default)
         self._prev_btn = QPushButton("\u266b")
         self._prev_btn.setFixedSize(20, 20)
@@ -61,14 +79,40 @@ class EffectButton(QWidget):
             f"QPushButton:hover {{ background: {color}; color: white; }}"
         )
         self._prev_btn.setVisible(False)
-        self._prev_btn.setToolTip("Preview audio")
+        self._prev_btn.setToolTip(t("effects.preview_tip"))
         self._prev_btn.clicked.connect(self._on_preview)
         lo.addWidget(self._prev_btn)
+
+    def _toggle_fav(self):
+        self._is_fav = not self._is_fav
+        self._fav_btn.setText("★" if self._is_fav else "☆")
+        self._fav_btn.setStyleSheet(
+            f"QPushButton {{ background: transparent;"
+            f" color: {FAVORITE_STAR if self._is_fav else COLORS['text_dim']};"
+            f" border: none; font-size: 13px; padding: 0; }}"
+            f"QPushButton:hover {{ color: {FAVORITE_STAR}; }}")
+        self.fav_toggled.emit(self._eid, self._is_fav)
 
     def mousePressEvent(self, e):
         """Clic gauche emet le signal clicked avec le nom du preset."""
         if e.button() == Qt.MouseButton.LeftButton:
             self.clicked.emit()
+
+    def contextMenuEvent(self, e):
+        """Step 38: Right-click context menu for quick preview."""
+        menu = QMenu(self)
+        menu.setStyleSheet(
+            f"QMenu {{ background: {COLORS['bg_panel']}; color: {COLORS['text']};"
+            f" border: 1px solid {COLORS['border']}; font-size: 11px; }}"
+            f"QMenu::item {{ padding: 4px 16px; }}"
+            f"QMenu::item:selected {{ background: {COLORS['accent']}; color: white; }}")
+        a_quick = menu.addAction("⚡ Quick Apply (last params)")
+        a_fav = menu.addAction("★ Toggle Favorite")
+        action = menu.exec(e.globalPos())
+        if action == a_quick:
+            self.right_clicked.emit(self._eid)
+        elif action == a_fav:
+            self._toggle_fav()
 
     def enterEvent(self, e):
         """Active l etat hover (fond colore + barre accent)."""
@@ -91,12 +135,10 @@ class EffectButton(QWidget):
             p = QPainter(self)
             p.setRenderHint(QPainter.RenderHint.Antialiasing)
             p.setPen(Qt.PenStyle.NoPen)
-            # Subtle colored tint on hover
             c = QColor(self._color)
             c.setAlpha(25)
             p.setBrush(QBrush(c))
             p.drawRoundedRect(0, 0, self.width(), self.height(), 6, 6)
-            # Left accent bar
             p.setBrush(QBrush(QColor(self._color)))
             p.drawRoundedRect(0, 4, 3, self.height() - 8, 1, 1)
             p.end()
@@ -164,16 +206,7 @@ class CollapsibleSection(QWidget):
 
 
 # ═══ Preset Item ═══
-
-_TAG_COLORS = {
-    "Autotune": "#f72585", "Hyperpop": "#ff006e", "Digicore": "#7209b7",
-    "Emocore": "#e94560", "Glitch": "#9b2226", "Vocal": "#4cc9f0",
-    "Ambient": "#2a9d8f", "Lo-fi": "#606c38", "Aggressive": "#bb3e03",
-    "Experimental": "#b5179e", "Electro": "#0ea5e9", "Tape": "#6b705c",
-    "Clean": "#16c79a", "Subtle": "#457b9d", "Dariacore": "#c74b50",
-    "Rhythmic": "#e07c24", "Psychedelic": "#6d597a", "Bass": "#264653",
-    "Cinematic": "#3d5a80", "Nightcore": "#ff69b4",
-}
+# TAG_COLORS now imported from utils.config (step 46)
 
 
 class PresetItem(QWidget):
@@ -187,8 +220,8 @@ class PresetItem(QWidget):
         self._color = COLORS['accent']
         if tags:
             for tg in tags:
-                if tg in _TAG_COLORS:
-                    self._color = _TAG_COLORS[tg]; break
+                if tg in TAG_COLORS:
+                    self._color = TAG_COLORS[tg]; break
         self.setFixedHeight(26)
         self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         if desc:
@@ -243,6 +276,7 @@ class EffectsPanel(QWidget):
     preset_new_clicked = pyqtSignal()
     preset_manage_clicked = pyqtSignal()
     import_clicked = pyqtSignal()
+    quick_apply = pyqtSignal(str)         # step 38: right-click quick apply
 
     def __init__(self, parent=None):
         """Initialise le widget EffectsPanel."""
@@ -254,18 +288,27 @@ class EffectsPanel(QWidget):
         self._search_text = ""
         self._show_effects = True
         self._show_presets = True
+        self._favorites: set[str] = set()   # step 37
+        self._load_favorites()
+
+        # Base background for the panel
+        self.setAutoFillBackground(True)
+        pal = self.palette()
+        pal.setColor(pal.ColorRole.Window, QColor(COLORS['bg_panel']))
+        self.setPalette(pal)
 
         lo = QVBoxLayout(self)
         lo.setContentsMargins(0, 0, 0, 0)
         lo.setSpacing(0)
 
-        # Header
+        # Header — forced bg_medium via palette (not stylesheet cascade)
         hdr = QWidget()
         hdr.setFixedHeight(36)
-        hdr.setStyleSheet(
-            f"background: {COLORS['bg_medium']}; "
-            f"border-bottom: 1px solid {COLORS['border']};"
-        )
+        hdr.setAutoFillBackground(True)
+        hdr_pal = hdr.palette()
+        hdr_pal.setColor(hdr_pal.ColorRole.Window, QColor(COLORS['bg_medium']))
+        hdr.setPalette(hdr_pal)
+        hdr.setStyleSheet(f"border-bottom: 1px solid {COLORS['border']};")
         hl = QHBoxLayout(hdr)
         hl.setContentsMargins(8, 0, 8, 0)
         tt = QLabel("EFFECTS")
@@ -278,6 +321,7 @@ class EffectsPanel(QWidget):
         self._btn_fx.clicked.connect(self._toggle_fx)
         self._btn_pr = self._tab("PR", True)
         self._btn_pr.clicked.connect(self._toggle_pr)
+        # Multi-select toggle (step 40)
         hl.addWidget(self._btn_fx)
         hl.addWidget(self._btn_pr)
         lo.addWidget(hdr)
@@ -286,7 +330,7 @@ class EffectsPanel(QWidget):
         self._search = QLineEdit()
         self._search.setPlaceholderText("\U0001f50d Search...")
         self._search.setStyleSheet(
-            f"QLineEdit {{ background: {COLORS['bg_dark']}; color: {COLORS['text']}; "
+            f"QLineEdit {{ background: {COLORS['bg_panel']}; color: {COLORS['text']}; "
             f"border: 1px solid {COLORS['border']}; border-radius: 4px; "
             f"padding: 4px 8px; font-size: 11px; margin: 4px 8px; }}"
             f"QLineEdit:focus {{ border: 1px solid {COLORS['accent']}; }}"
@@ -294,16 +338,28 @@ class EffectsPanel(QWidget):
         self._search.textChanged.connect(self._on_search)
         lo.addWidget(self._search)
 
+        # Separator below search (same style as header border)
+        sep_search = QFrame()
+        sep_search.setFrameShape(QFrame.Shape.HLine)
+        sep_search.setFrameShadow(QFrame.Shadow.Plain)
+        sep_search.setFixedHeight(1)
+        sep_search.setStyleSheet(f"background: {COLORS['border']}; border: none;")
+        lo.addWidget(sep_search)
+
         # Scroll area
         self._scroll = QScrollArea()
         self._scroll.setWidgetResizable(True)
         self._scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self._scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self._scroll.setStyleSheet(
-            f"QScrollArea {{ background: {COLORS['bg_medium']}; border: none; }}"
-            f"QScrollBar:vertical {{ background: {COLORS['bg_dark']}; width: 6px; }}"
-            f"QScrollBar::handle:vertical {{ background: {COLORS['border']}; "
-            f"border-radius: 3px; min-height: 20px; }}"
+            f"QScrollArea {{ background: {COLORS['bg_panel']}; border: none; }}"
+            f"QScrollBar:vertical {{ background: {COLORS['bg_panel']}; width: 8px;"
+            f" margin: 0; border: none; }}"
+            f"QScrollBar::handle:vertical {{ background: {COLORS['border']};"
+            f" border-radius: 4px; min-height: 30px; }}"
+            f"QScrollBar::handle:vertical:hover {{ background: {COLORS['accent']}; }}"
             f"QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{ height: 0; }}"
+            f"QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{ background: {COLORS['bg_panel']}; }}"
         )
         lo.addWidget(self._scroll)
 
@@ -332,6 +388,26 @@ class EffectsPanel(QWidget):
         lo.addWidget(foot)
 
         self.reload_plugins()
+
+    def _load_favorites(self):
+        """Load favorites from settings."""
+        s = load_settings()
+        self._favorites = set(s.get("favorites", []))
+
+    def _save_favorites(self):
+        """Save favorites to settings."""
+        s = load_settings()
+        s["favorites"] = list(self._favorites)
+        save_settings(s)
+
+    def _on_fav_toggle(self, eid, is_fav):
+        """Handle favorite toggle."""
+        if is_fav:
+            self._favorites.add(eid)
+        else:
+            self._favorites.discard(eid)
+        self._save_favorites()
+        self._rebuild()
 
     def reload_plugins(self):
         """Recharge la liste des plugins apres import."""
@@ -394,6 +470,21 @@ class EffectsPanel(QWidget):
         lang = get_language()
         q = self._search_text
 
+        def _make_btn(plugin):
+            name = plugin.get_name(lang)
+            short = plugin.get_short(lang)
+            is_fav = plugin.id in self._favorites
+            btn = EffectButton(
+                plugin.icon, plugin.color, name, plugin.id,
+                short_desc=short,
+                preview_path=plugin.get_preview_path(),
+                is_fav=is_fav,
+            )
+            btn.clicked.connect(lambda pid=plugin.id: self.effect_clicked.emit(pid))
+            btn.fav_toggled.connect(self._on_fav_toggle)
+            btn.right_clicked.connect(lambda pid: self.quick_apply.emit(pid))
+            return btn
+
         # ── Effects ──
         if self._show_effects and self._plugins:
             grouped = plugins_grouped(self._plugins, lang)
@@ -406,32 +497,28 @@ class EffectsPanel(QWidget):
                 if matching:
                     cl.addWidget(self._slabel("EFFECTS"))
                     for plugin, name in sorted(matching, key=lambda x: x[1]):
-                        short = plugin.get_short(lang)
-                        btn = EffectButton(
-                            plugin.icon, plugin.color, name, plugin.id,
-                            short_desc=short,
-                            preview_path=plugin.get_preview_path()
-                        )
-                        btn.clicked.connect(
-                            lambda pid=plugin.id: self.effect_clicked.emit(pid)
-                        )
-                        cl.addWidget(btn)
+                        cl.addWidget(_make_btn(plugin))
             else:
+                # Favorites section first (step 37)
+                first_section = True
+                if self._favorites:
+                    fav_plugins = [p for p in self._plugins.values() if p.id in self._favorites]
+                    if fav_plugins:
+                        section = CollapsibleSection(t("effects.favorites"), start_expanded=True)
+                        for plugin in sorted(fav_plugins, key=lambda p: p.get_name(lang)):
+                            section.add_widget(_make_btn(plugin))
+                        cl.addWidget(section)
+                        first_section = False
+
+                # Regular sections
                 for sec_label, sec_plugins in grouped:
+                    if not first_section:
+                        cl.addWidget(self._sep())
                     section = CollapsibleSection(sec_label, start_expanded=True)
                     for plugin in sec_plugins:
-                        name = plugin.get_name(lang)
-                        short = plugin.get_short(lang)
-                        btn = EffectButton(
-                            plugin.icon, plugin.color, name, plugin.id,
-                            short_desc=short,
-                            preview_path=plugin.get_preview_path()
-                        )
-                        btn.clicked.connect(
-                            lambda pid=plugin.id: self.effect_clicked.emit(pid)
-                        )
-                        section.add_widget(btn)
+                        section.add_widget(_make_btn(plugin))
                     cl.addWidget(section)
+                    first_section = False
 
         # ── Presets (collapsible, CLOSED by default) ──
         if self._show_presets and self._all_presets:
@@ -448,13 +535,17 @@ class EffectsPanel(QWidget):
                     item.clicked.connect(self.preset_clicked.emit)
                     cl.addWidget(item)
             else:
+                first_preset = True
                 for tag, presets in sorted(self._tag_presets.items()):
+                    if not first_preset:
+                        cl.addWidget(self._sep())
                     section = CollapsibleSection(tag, start_expanded=False)
                     for p in presets:
                         item = PresetItem(p["name"], p.get("description", ""), p.get("tags", []))
                         item.clicked.connect(self.preset_clicked.emit)
                         section.add_widget(item)
                     cl.addWidget(section)
+                    first_preset = False
 
                 # Untagged presets
                 tagged = set()
@@ -483,9 +574,10 @@ class EffectsPanel(QWidget):
         return l
 
     def _sep(self):
-        """Cree un separateur horizontal."""
+        """Cree un separateur horizontal fin, meme style que sous le header EFFECTS."""
         s = QFrame()
         s.setFrameShape(QFrame.Shape.HLine)
-        s.setStyleSheet(f"color: {COLORS['border']};")
+        s.setFrameShadow(QFrame.Shadow.Plain)
         s.setFixedHeight(1)
+        s.setStyleSheet(f"background: {COLORS['border']}; border: none; margin: 2px 8px;")
         return s

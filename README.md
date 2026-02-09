@@ -1,10 +1,75 @@
-# Glitch Maker v3.10
+# Glitch Maker v6.0 🎵
 
-Application desktop d'edition et de glitching audio pour la production **digicore / hyperpop / glitchcore / dariacore**.
+Audio glitch art tool — Creative audio effects workstation.
+*Outil de glitch audio — Station d'effets audio créatifs.*
 
-Interface sombre style DAW avec waveform interactive, timeline multi-clips, 28 effets audio, 25 presets, metronome et grille de temps.
+## Features / Fonctionnalités
 
-![Python](https://img.shields.io/badge/Python-3.11+-blue) ![PyQt6](https://img.shields.io/badge/PyQt6-GUI-green) ![License](https://img.shields.io/badge/License-MIT-yellow)
+- **22 effects / effets** : Bitcrusher, Chorus, Delay, Reverb, Distortion, Pitch Shift, Time Stretch, Vinyl, OTT, Stutter, Granular, Filter, Phaser, Ring Mod, Saturation, Shuffle, Tape Stop, Datamosh, Buffer Freeze, Tremolo, Pan, Volume
+- **Non-destructive / Non-destructif** : every effect is a reversible operation / chaque effet est une opération réversible
+- **20 vocal presets / presets vocaux** : Hard Autotune, Hyperpop, Robot, Nightcore, Lo-fi, Demon Voice, Vaporwave, Glitchcore...
+- **Timeline** : drag & drop, split, duplicate, fade in/out, **cut (silence or splice)**
+- **Bilingual / Bilingue** : Français / English
+- **Themes / Thèmes** : Dark / Light
+- **Formats** : WAV, MP3, FLAC, OGG (import/export). Project .gspi with undo/redo
+- **Metronome / Métronome** & **beat grid / grille de tempo**
+- **Spectrum / Spectre**, **minimap**, **markers / marqueurs**
+- **Zoom synced / synchronisé** : waveform ↔ timeline ↔ minimap
+
+## What's new in v6.0 / Nouveautés v6.0
+
+### 📐 Menu bar separator / Séparateur barre de menu
+- **Fine line below menu bar** / **Ligne fine sous la barre de menu** : 1px border-bottom on QMenuBar separates File/View/Options from the rest of the UI / ligne de séparation entre le menu et le reste de l'interface
+
+### 🎨 Header colors fixed / Couleurs d'en-tête corrigées
+- **Effects and History headers now identical** / **En-têtes Effets et Historique désormais identiques** : both use QPalette to force bg_medium background — no more stylesheet cascade issues / les deux utilisent QPalette pour forcer le fond, plus de problème de couleur
+
+## Previous versions / Versions précédentes
+
+<details><summary>v5.11 — Perfect Layout Lines, Independent Zoom</summary>
+
+- Continuous vertical separator lines. All headers 36px aligned. Independent waveform/timeline zoom. Timeline scrollbar. Minimap appears at slightest zoom.
+</details>
+
+<details><summary>v5.10 — Layout Separators, Automation Removed</summary>
+
+- Separator lines between major UI sections. Automation panel and menu fully removed.
+</details>
+
+<details><summary>v5.9 — Cleaner UI, 3 Settings Dialogs</summary>
+
+- Separator lines redesigned. Effect history cards. 3 separate settings: Audio, Language, Theme.
+</details>
+
+<details><summary>v5.8 — UI Polish, Cut, Timeline Zoom</summary>
+
+- History panel harmonized. Separator lines added (then removed in v5.9). Search bar restyled. Split settings dialogs. Enlarged Refresh button. Cut selection (silence/splice). Distinct clip colors. Timeline zoom with mouse wheel. Draggable minimap. Scrollbar removed. Blue anchor fixed.
+</details>
+
+<details><summary>v5.6 — Anchor Playback, Grid Fix</summary>
+
+- Grid display fixed. Stop returns to blue anchor. Play from anchor. Minimap scroll sync. Last clip deletion blocked. New Project reset. UI polish.
+</details>
+
+<details><summary>v5.5 — UI Cleanup & Minimap Fix</summary>
+
+- Effect Chain panel removed. History visible by default. Minimap crash fixed.
+</details>
+
+<details><summary>v5.4 — Effects Crash Fix & Latency</summary>
+
+- `_plugins` dict fix. Stream before play. Timer 60fps. Progressive fallback.
+</details>
+
+<details><summary>v5.3 — Click Crash & Logs</summary>
+
+- `_seek()` and `_on_sel()` fixed. Crash logging. try/except everywhere.
+</details>
+
+<details><summary>v5.2 — Playback Stability</summary>
+
+- Thread-safe signals. Auto audio output. Hot-plug. Protected callback. Manuals rewritten.
+</details>
 
 ## Installation
 
@@ -13,145 +78,61 @@ pip install -r requirements.txt
 python main.py
 ```
 
-Pour les formats MP3/M4A, installer FFmpeg :
-```bash
-winget install ffmpeg
-```
+### Dependencies / Dépendances
+- Python 3.10+
+- PyQt6
+- numpy, soundfile, scipy, sounddevice
+- FFmpeg (auto-downloaded if missing / téléchargé automatiquement si absent)
 
-## Compilation .exe
+## Usage / Utilisation
 
-```bash
-build.bat
-```
+1. **File > Open** (Ctrl+O) to load audio / **Fichier > Ouvrir** pour charger un audio
+2. Select a region on the waveform (or nothing for global) / Sélectionner une zone (ou rien pour global)
+3. Click an effect in the left panel / Cliquer un effet dans le panneau gauche
+4. Adjust parameters, Preview, then Apply / Ajuster les paramètres, Prévisualiser, puis Appliquer
+5. The effect appears in the history panel (right) / L'effet apparaît dans l'historique (droite)
+6. **Toggle** (●) or **Delete** (✕) any effect / **Activer/désactiver** (●) ou **Supprimer** (✕) chaque effet
+7. **Right-click a red selection** to cut / **Clic droit sur une sélection rouge** pour couper
+8. **File > Save** (Ctrl+S) saves as .gspi / **Fichier > Enregistrer** sauvegarde en .gspi
 
-Resultat dans `dist/Glitch.exe` (standalone, pas besoin de Python installe).
+## Keyboard shortcuts / Raccourcis clavier
 
-## Fonctionnalites
+| Key / Touche | Action |
+|---|---|
+| Ctrl+N | New project / Nouveau projet |
+| Ctrl+O | Open file / Ouvrir un fichier |
+| Ctrl+S | Save project / Sauvegarder |
+| Ctrl+Z | Undo / Annuler |
+| Ctrl+Y | Redo / Refaire |
+| Space / Espace | Play / Stop |
+| Delete / Suppr | Delete selected clip / Supprimer le clip |
+| M | Add marker / Ajouter un marqueur |
+| Ctrl+← / → | Navigate markers / Naviguer entre marqueurs |
+| Ctrl+A | Select all / Tout sélectionner |
+| Esc / Échap | Deselect / Désélectionner |
+| Mouse wheel / Molette | Zoom waveform or timeline (independent / indépendant) |
 
-### 28 Effets audio (6 categories)
-
-| Categorie | Effets |
-|-----------|--------|
-| **Basics** | Reverse, Volume, Filter (LP/HP/BP + sweep), Pan |
-| **Pitch & Time** | Pitch Shift, Time Stretch, Tape Stop, Autotune (chromatique + gammes), Wave Ondulee |
-| **Distortion** | Saturation (3 types), Distortion (fuzz/overdrive), Bitcrusher (bit depth + downsample) |
-| **Modulation** | Chorus, Phaser, Tremolo, Ring Modulator |
-| **Space & Texture** | Delay Feedback, Vinyl Crackle, OTT Compression, Voix Robotique, Hyper (one-knob hyperpop) |
-| **Glitch** | Stutter, Granular, Slice Shuffle, Buffer Freeze, Datamosh, Vocal Chop, Tape Glitch |
-
-Chaque effet a une fenetre de parametres avec preview audio en temps reel.
-Les icones des effets affichent la lettre initiale sur un carre colore.
-
-### 25 Presets
-
-Presets classes par tags avec pastille couleur :
-
-- **Autotune** : Hard Autotune, Soft Autotune, Autotune + Reverb Wash
-- **Hyperpop** : 100 gecs Mode, Hyperpop Maximum, Hyperpop Lite, Digital Angel, Nightcore Classic
-- **Digicore / Dariacore** : Digicore Vocal Edit, Dariacore Chop, Dariacore Smash
-- **Lo-fi / Tape** : Vinyl Nostalgia, Lo-fi Tape Mess, Tube Warmth
-- **Ambient / Psychedelic** : Underwater, Dreamy Slowdown, Psycho Phaser, Wave Dream
-- **Glitch / Experimental** : Electro Stutter, Sidechain Pulse, Fuzz Demon, Emocore Vocal
-- **Vocal** : Robot Voice, Thick Chorus, Nightcore
-
-Export / import de presets au format `.pspi`.
-
-### Metronome & Grille de temps
-
-- **Metronome** : clic de tempo synchronise a la lecture (BPM 20-300, volume, signature rythmique)
-- **Grille** : overlay sur la waveform avec lignes de mesures, temps et subdivisions
-- Choix de resolution : Bar, Beat, 1/2, 1/3, 1/4, 1/6, 1/8, 1/12, 1/16
-- Controles BPM avec boutons +/- (auto-repeat) dans la toolbar
-
-### Waveform interactive
-
-- Zoom a la molette (centre sur curseur, jusqu'a x100)
-- Barre de scroll horizontale quand zoome (entre waveform et timeline)
-- Selection par drag avec curseur bleu
-- Playhead temps reel
-- Grille de temps superposee
-- Indicateur de zoom (x2.5, x10, etc.)
-
-### Timeline avancee
-
-- Clips audio avec drag & drop
-- Clic droit : Couper, Dupliquer, Fade In/Out, Supprimer
-- Effets appliques en 3 blocs (avant / effet / apres)
-- Effets globaux non-destructifs sur toute la timeline
-
-### Projet .gspi
-
-Format de sauvegarde complet (ZIP avec clips WAV + metadata JSON).
-Sauver / ouvrir via le menu Fichier ou drag & drop.
-
-### Multi-langue
-
-Interface disponible en francais et anglais (extensible).
-Changement de langue instantane dans Options > Langue.
-
-### Import de plugins
-
-Possibilite d'importer des effets personnalises (fichiers `.py` avec classe `Plugin`).
-
-## Raccourcis clavier
-
-| Touche | Action |
-|--------|--------|
-| Espace | Play / Pause |
-| Ctrl+Z | Annuler (30 niveaux) |
-| Ctrl+Y | Retablir |
-| Ctrl+O | Importer audio |
-| Ctrl+S | Export WAV |
-| Ctrl+Shift+S | Sauver projet |
-| Ctrl+A | Tout selectionner |
-| Escape | Deselectionner |
-| Double-clic | Tout selectionner |
-| Molette | Zoom waveform |
-
-## Formats supportes
-
-| Type | Formats |
-|------|---------|
-| Import | WAV, MP3, FLAC, OGG, M4A, AIFF |
-| Export | WAV, MP3, FLAC |
-
-## Architecture du code
+## Structure
 
 ```
-main.py                     Point d'entree
-utils/
-  config.py                 Couleurs, chemins, settings
-  translator.py             Systeme i18n (t() pour traduire)
-core/
-  audio_engine.py           Chargement / export audio (WAV, MP3, FLAC)
-  playback.py               Lecture temps reel (sounddevice, low-latency)
-  metronome.py              Generation de clics synchronises au BPM
-  timeline.py               Modele de donnees timeline (clips)
-  project.py                Sauvegarde / chargement projet .gspi
-  preset_manager.py         Gestion des presets (builtin + user)
-  effects/                  28 effets audio (un fichier par effet)
-gui/
-  main_window.py            Fenetre principale (toolbar, menus, connexions)
-  waveform_widget.py        Affichage waveform (zoom, grille, selection)
-  timeline_widget.py        Affichage timeline (clips, drag, context menu)
-  transport_bar.py          Barre de transport (play/stop/volume)
-  effects_panel.py          Sidebar effets + presets
-  effect_dialogs.py         Dialogues de parametres pour chaque effet
-  dialogs.py                Dialogues generaux (enregistrement, about)
-plugins/
-  loader.py                 Chargement des 28 plugins builtin
-  user_loader.py            Import / gestion des plugins utilisateur
-lang/
-  en.json / fr.json         Traductions
-assets/
-  presets.json              Presets builtin
+main.py              Entry point / Point d'entrée
+gui/                 PyQt6 interface
+core/                Audio engine, timeline, project
+effects/             Effect plugins
+plugins/             Plugin loader
+lang/                Translations EN/FR
+assets/              Presets, manuals / manuels
+utils/               Config, translation, logging
+tests/               Unit tests
 ```
 
-Toutes les fonctions sont documentees avec des docstrings en francais.
+## Bugs & Contributions
 
-## Stack technique
+Report bugs by creating an **issue** on GitHub:
+*Signalez les bugs en créant une **issue** sur GitHub :*
+👉 **https://github.com/Spiralyfox**
 
-- **GUI** : PyQt6 (theme sombre custom)
-- **Audio** : numpy, scipy, sounddevice, soundfile, librosa
-- **Playback** : Stream low-latency (blocksize 256, ~6ms)
-- **Build** : PyInstaller (standalone .exe)
+## Licence
+
+Personal project — Théo (Spiralyfox)
+*Projet personnel — Théo (Spiralyfox)*

@@ -1,10 +1,11 @@
 """
 Autotune — Pitch correction to nearest note.
-Adjustable speed (hard/soft tune), key, scale, formant shift, hard tune mode.
+Adjustable speed (hard/soft tune), key, and scale.
 """
 import numpy as np
 from scipy.signal import resample
 
+# Note frequencies A0 to C8
 _NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 _SCALES = {
     "chromatic": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
@@ -33,10 +34,12 @@ def _snap_to_scale(midi_note, key_offset, scale_intervals):
     """Snap a MIDI note to nearest note in the given scale + key."""
     note_class = int(round(midi_note)) % 12
     relative = (note_class - key_offset) % 12
+    # Find closest scale degree
     best = min(scale_intervals, key=lambda s: min(abs(relative - s), 12 - abs(relative - s)))
     target_class = (best + key_offset) % 12
     octave = int(round(midi_note)) // 12
     target = octave * 12 + target_class
+    # Pick closest octave
     if abs(target - midi_note) > abs(target + 12 - midi_note):
         target += 12
     elif abs(target - midi_note) > abs(target - 12 - midi_note):
@@ -45,17 +48,21 @@ def _snap_to_scale(midi_note, key_offset, scale_intervals):
 
 
 def _detect_pitch_autocorr(frame, sr, fmin=80, fmax=800):
-    """Autocorrelation pitch detection avec interpolation parabolique."""
+    """Simple autocorrelation pitch detection."""
     n = len(frame)
     if n < 64:
         return 0.0
+    # Normalize
     frame = frame - np.mean(frame)
     if np.max(np.abs(frame)) < 1e-5:
         return 0.0
+    # Autocorrelation via FFT
     fft_size = 1 << (2 * n - 1).bit_length()
     fft = np.fft.rfft(frame, fft_size)
     acf = np.fft.irfft(fft * np.conj(fft))[:n]
+    # Normalize
     acf = acf / (acf[0] + 1e-12)
+    # Search range
     min_lag = max(2, int(sr / fmax))
     max_lag = min(n - 1, int(sr / fmin))
     if min_lag >= max_lag:
@@ -65,11 +72,12 @@ def _detect_pitch_autocorr(frame, sr, fmin=80, fmax=800):
         return 0.0
     peak_idx = np.argmax(search)
     peak_val = search[peak_idx]
-    if peak_val < 0.3:
+    if peak_val < 0.3:  # Not periodic enough
         return 0.0
     lag = peak_idx + min_lag
     if lag == 0:
         return 0.0
+    # Parabolic interpolation
     if 0 < peak_idx < len(search) - 1:
         a, b, c = search[peak_idx - 1], search[peak_idx], search[peak_idx + 1]
         denom = 2 * (2 * b - a - c)
@@ -79,32 +87,14 @@ def _detect_pitch_autocorr(frame, sr, fmin=80, fmax=800):
     return sr / lag
 
 
-def _apply_formant_shift(signal, formant_semitones, sr):
-    """Decale les formants sans changer le pitch.
-    Resample pour deplacer l'enveloppe spectrale, puis resample pour restaurer la duree.
-    formant_semitones > 0 = voix anime / plus aigue, < 0 = voix grave / plus profonde.
-    """
-    if abs(formant_semitones) < 0.1:
-        return signal
-    n = len(signal)
-    factor = 2.0 ** (formant_semitones / 12.0)
-    intermediate_len = max(2, int(n / factor))
-    shifted = resample(signal, intermediate_len)
-    return resample(shifted, n)
-
-
 def autotune(audio_data, start, end, sr=44100,
-             speed=0.8, key="C", scale="chromatic", mix=1.0,
-             formant_shift=0.0, hard_tune=False):
+             speed=0.8, key="C", scale="chromatic", mix=1.0):
     """
-    Correction de pitch avec formant shift independant.
-    speed: 0.0 = pas de correction, 1.0 = snap dur (T-Pain)
-    key: note racine
-    scale: type de gamme
+    Pitch correction.
+    speed: 0.0 = no correction, 1.0 = hard snap (T-Pain style)
+    key: root note name
+    scale: scale type
     mix: dry/wet
-    formant_shift: decalage des formants en demi-tons (-12 a +12)
-                   >0 = voix anime/aigue, <0 = voix grave/profonde
-    hard_tune: True = snap instantane sans transition (style 100 gecs / T-Pain extreme)
     """
     result = audio_data.copy()
     seg = result[start:end].copy().astype(np.float64)
@@ -121,15 +111,9 @@ def autotune(audio_data, start, end, sr=44100,
     key_offset = _NOTE_NAMES.index(key) if key in _NOTE_NAMES else 0
     scale_intervals = _SCALES.get(scale, _SCALES["chromatic"])
 
-    # En hard tune, force speed a 1.0 et utilise des fenetres plus petites
-    if hard_tune:
-        speed = 1.0
-        win_size = 1024  # Fenetres plus petites = transitions plus rapides
-        hop = win_size // 2
-    else:
-        win_size = 2048
-        hop = win_size // 4
-
+    # Window parameters
+    win_size = 2048
+    hop = win_size // 4
     window = np.hanning(win_size)
     output = np.zeros_like(mono)
     weight = np.zeros(n, dtype=np.float64)
@@ -138,6 +122,7 @@ def autotune(audio_data, start, end, sr=44100,
         frame = mono[i:i + win_size] * window
         freq = _detect_pitch_autocorr(frame, sr)
         if freq < 60 or freq > 1000:
+            # No pitch detected / out of range — pass through
             output[i:i + win_size] += frame
             weight[i:i + win_size] += window
             continue
@@ -151,7 +136,7 @@ def autotune(audio_data, start, end, sr=44100,
             weight[i:i + win_size] += window
             continue
 
-        # Pitch shift cette frame
+        # Pitch shift this frame
         factor = 2.0 ** (shift_semitones / 12.0)
         new_len = max(2, int(win_size / factor))
         shifted = resample(frame, new_len)
@@ -163,13 +148,10 @@ def autotune(audio_data, start, end, sr=44100,
     weight = np.maximum(weight, 1e-8)
     output /= weight
 
-    # Appliquer le formant shift independamment
-    if abs(formant_shift) >= 0.1:
-        output = _apply_formant_shift(output, formant_shift, sr)
-
-    # Mix dry/wet
+    # Apply to original (with mix)
     dry = seg.copy()
     if is_stereo:
+        # Apply same pitch correction ratio to both channels
         ratio = np.where(np.abs(mono) > 1e-6, output / (mono + 1e-8), 1.0)
         ratio = np.clip(ratio, -3.0, 3.0)
         for ch in range(seg.shape[1]):

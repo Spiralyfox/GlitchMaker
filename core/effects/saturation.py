@@ -1,75 +1,80 @@
 """
-Effet Saturation — Hard Clip et Soft Clip.
+Effet Saturation — Hard Clip, Soft Clip, Overdrive unifiés.
 Distortion agressive (100 gecs) ou chaude (Charli XCX).
+
+Refactored: une seule fonction saturate() avec paramètre mode.
+Les anciennes fonctions hard_clip/soft_clip/overdrive sont conservées
+comme aliases pour la rétrocompatibilité.
 """
 
 import numpy as np
+from utils.logger import get_logger
+
+_log = get_logger("effect.saturation")
 
 
-def hard_clip(audio_data: np.ndarray, start: int, end: int,
-              threshold: float = 0.5) -> np.ndarray:
-    """
-    Écrête le signal brutalement au-dessus du threshold.
-    Plus le threshold est bas, plus c'est agressif.
-    
+def saturate(audio_data: np.ndarray, start: int, end: int,
+             mode: str = "soft", drive: float = 3.0,
+             tone: float = 0.5, sr: int = 44100) -> np.ndarray:
+    """Saturation unifiée avec 3 modes.
+
     Args:
-        threshold: Seuil d'écrêtage (0.1 = très distordu, 0.9 = léger)
-    """
-    result = audio_data.copy()
-    threshold = max(0.05, min(1.0, threshold))
-    result[start:end] = np.clip(result[start:end], -threshold, threshold)
-    # Re-normaliser pour garder le volume
-    result[start:end] = result[start:end] / threshold
-    return np.clip(result, -1.0, 1.0)
+        audio_data: Signal audio (mono ou stéréo).
+        start: Échantillon de début.
+        end: Échantillon de fin.
+        mode: 'hard' (écrêtage brutal), 'soft' (tanh chaud),
+              'overdrive' (gain + asymétrique + tone).
+        drive: Intensité (0.5–20.0). Plus haut = plus saturé.
+        tone: Brillance pour overdrive (0.0=sombre, 1.0=brillant).
+        sr: Taux d'échantillonnage.
 
-
-def soft_clip(audio_data: np.ndarray, start: int, end: int,
-              drive: float = 3.0) -> np.ndarray:
-    """
-    Saturation douce avec tanh — ajoute des harmoniques chaudes.
-    
-    Args:
-        drive: Intensité de la saturation (1.0 = léger, 10.0 = très saturé)
+    Returns:
+        Audio avec saturation appliquée, clippé à [-1, 1].
     """
     result = audio_data.copy()
     drive = max(0.5, min(20.0, drive))
-    result[start:end] = np.tanh(result[start:end] * drive)
-    return result
+    segment = result[start:end]
 
+    if mode == "hard":
+        threshold = max(0.05, 1.0 / drive)
+        result[start:end] = np.clip(segment, -threshold, threshold) / threshold
 
-def overdrive(audio_data: np.ndarray, start: int, end: int,
-              gain: float = 5.0, tone: float = 0.5) -> np.ndarray:
-    """
-    Overdrive — combinaison de gain + soft clip + filtre.
-    
-    Args:
-        gain: Gain d'entrée (1-20)
-        tone: Brillance (0.0 = sombre, 1.0 = brillant)
-    """
-    result = audio_data.copy()
-    segment = result[start:end].copy()
-    
-    # Gain
-    segment = segment * gain
-    
-    # Soft clip asymétrique (plus musical)
-    segment = np.where(
-        segment >= 0,
-        np.tanh(segment),
-        np.tanh(segment * 0.8) * 1.2
-    )
-    
-    # Tone (simple filtre passe-bas/haut via moyenne)
-    if tone < 0.5 and segment.ndim >= 1:
-        # Plus sombre : moyenne mobile
-        kernel_size = int((1.0 - tone) * 8) + 1
-        if segment.ndim == 1:
-            segment = np.convolve(segment, np.ones(kernel_size)/kernel_size, mode='same')
-        else:
-            for ch in range(segment.shape[1]):
-                segment[:, ch] = np.convolve(
-                    segment[:, ch], np.ones(kernel_size)/kernel_size, mode='same'
-                )
-    
-    result[start:end] = segment
+    elif mode == "overdrive":
+        seg = segment.copy() * drive
+        # Asymmetric soft clip (more musical character)
+        seg = np.where(seg >= 0, np.tanh(seg), np.tanh(seg * 0.8) * 1.2)
+        # Tone control via simple moving average
+        if tone < 0.5 and seg.ndim >= 1:
+            kernel_size = int((1.0 - tone) * 8) + 1
+            if seg.ndim == 1:
+                seg = np.convolve(seg, np.ones(kernel_size) / kernel_size, mode='same')
+            else:
+                for ch in range(seg.shape[1]):
+                    seg[:, ch] = np.convolve(
+                        seg[:, ch], np.ones(kernel_size) / kernel_size, mode='same'
+                    )
+        result[start:end] = seg
+
+    else:  # "soft" (default)
+        result[start:end] = np.tanh(segment * drive)
+
+    _log.debug("Saturation mode=%s drive=%.1f applied to %d samples", mode, drive, end - start)
     return np.clip(result, -1.0, 1.0)
+
+
+# ── Rétrocompatibilité ──
+
+def hard_clip(audio_data, start, end, threshold=0.5, **kw):
+    """Alias rétrocompat → saturate(mode='hard')."""
+    drive = max(0.5, 1.0 / max(0.05, threshold))
+    return saturate(audio_data, start, end, mode="hard", drive=drive)
+
+
+def soft_clip(audio_data, start, end, drive=3.0, **kw):
+    """Alias rétrocompat → saturate(mode='soft')."""
+    return saturate(audio_data, start, end, mode="soft", drive=drive)
+
+
+def overdrive(audio_data, start, end, gain=5.0, tone=0.5, **kw):
+    """Alias rétrocompat → saturate(mode='overdrive')."""
+    return saturate(audio_data, start, end, mode="overdrive", drive=gain, tone=tone)

@@ -46,7 +46,7 @@ class ImportPluginDialog(QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Manage Effects Plugins")
+        self.setWindowTitle(t("plugins.manage_title"))
         self.setFixedSize(500, 460)
         self.setStyleSheet(_SS)
         self._changed = False  # track if we installed/removed anything
@@ -157,7 +157,7 @@ class ImportPluginDialog(QDialog):
     def _install(self):
         """Installe le plugin dans le dossier user_plugins."""
         if not self._py_path:
-            QMessageBox.warning(self, "Import", "Please select a .py file first.")
+            QMessageBox.warning(self, "Import", t("plugins.import_warning"))
             return
 
         try:
@@ -183,7 +183,7 @@ class ImportPluginDialog(QDialog):
         """Desinstalle un plugin utilisateur."""
         item = self._list.currentItem()
         if not item:
-            QMessageBox.warning(self, "Remove", "Select a plugin to remove.")
+            QMessageBox.warning(self, "Remove", t("plugins.remove_warning"))
             return
 
         pid = item.data(Qt.ItemDataRole.UserRole)

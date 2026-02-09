@@ -63,4 +63,4 @@ def granular(audio_data: np.ndarray, start: int, end: int,
         output = np.concatenate([output, pad], axis=0)
 
     result[start:end] = output
-    return np.clip(result, -1.0, 1.0)
+    return result

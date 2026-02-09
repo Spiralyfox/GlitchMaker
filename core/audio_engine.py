@@ -3,6 +3,8 @@ Audio engine — multi-format loading, export.
 MP3 export: lameenc (pure Python, no ffmpeg) > ffmpeg > pydub.
 Other formats: soundfile > ffmpeg > pydub > librosa.
 """
+from utils.logger import get_logger
+_log = get_logger("audio_engine")
 
 import os
 import sys
@@ -12,9 +14,6 @@ import shutil
 import glob
 import numpy as np
 import soundfile as sf
-import logging
-
-log = logging.getLogger(__name__)
 
 
 # ═══════════════════════════════════════
@@ -55,8 +54,8 @@ def _load_ffmpeg_from_settings():
                 _ffmpeg_cache = custom
                 _ffmpeg_searched = True
                 return True
-    except Exception as e:
-        log.debug("ignored: %s", e)
+    except Exception as _ex:
+        _log.debug("Non-critical: %s", _ex)
     return False
 
 
@@ -116,8 +115,8 @@ def _find_ffmpeg() -> str | None:
                 if line and os.path.isfile(line):
                     _ffmpeg_cache = line
                     return line
-    except Exception as e:
-        log.debug("ignored: %s", e)
+    except Exception as _ex:
+        _log.debug("Non-critical: %s", _ex)
 
     candidates = []
     local = os.environ.get("LOCALAPPDATA", "")
@@ -155,8 +154,8 @@ def _find_ffmpeg() -> str | None:
             if os.path.isfile(p):
                 _ffmpeg_cache = p
                 return p
-        except Exception as e:
-            log.debug("ignored: %s", e)
+        except Exception as _ex:
+            _log.debug("Non-critical: %s", _ex)
     return None
 
 
@@ -171,8 +170,8 @@ def _sync_pydub_ffmpeg():
             probe = os.path.join(d, "ffprobe.exe" if os.name == 'nt' else "ffprobe")
             if os.path.isfile(probe):
                 AudioSegment.ffprobe = probe
-        except Exception as e:
-            log.debug("ignored: %s", e)
+        except Exception as _ex:
+            _log.debug("Non-critical: %s", _ex)
 
 
 def ffmpeg_available() -> bool:
@@ -257,8 +256,8 @@ def download_ffmpeg(progress_cb=None) -> str:
                            creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
         if r.returncode != 0:
             raise RuntimeError("FFmpeg exits with error")
-    except subprocess.TimeoutExpired as e:
-        log.debug("ignored: %s", e)  # Some systems are slow, but binary exists
+    except subprocess.TimeoutExpired:
+        pass  # Some systems are slow, but binary exists
     except FileNotFoundError:
         _cleanup(dst)
         raise RuntimeError("Extracted binary cannot run")
@@ -322,8 +321,8 @@ def _cleanup(path):
     try:
         if os.path.isfile(path):
             os.remove(path)
-    except Exception as e:
-        log.debug("ignored: %s", e)
+    except Exception as _ex:
+        _log.debug("Non-critical: %s", _ex)
 
 
 # ═══════════════════════════════════════
@@ -363,7 +362,7 @@ def load_audio(filepath: str) -> tuple[np.ndarray, int]:
             errors.append(f"ffmpeg: {e}")
             if tmp:
                 try: os.unlink(tmp.name)
-                except Exception as e: log.debug("ignored: %s", e)
+                except Exception as _ex: _log.debug("Non-critical: %s", _ex)
 
     # 3. pydub
     try:
@@ -399,8 +398,8 @@ def load_audio(filepath: str) -> tuple[np.ndarray, int]:
             download_ffmpeg()
             # Retry load with ffmpeg now available
             return load_audio(filepath)
-        except Exception as e:
-            log.debug("ignored: %s", e)
+        except Exception as _ex:
+            _log.debug("Non-critical: %s", _ex)
         raise RuntimeError(
             f"Cannot load '{fname}'.\n\n"
             f"{ext.upper()} files require FFmpeg to decode.\n\n"
@@ -457,8 +456,8 @@ def export_audio(data: np.ndarray, sr: int, filepath: str, fmt: str = "wav"):
         try:
             sf.write(filepath, data, sr, format="FLAC")
             return
-        except Exception as e:
-            log.debug("ignored: %s", e)
+        except Exception as _ex:
+            _log.debug("Non-critical: %s", _ex)
 
     # MP3: try lameenc first (pure Python, always works)
     if fmt == "mp3":
@@ -469,7 +468,7 @@ def export_audio(data: np.ndarray, sr: int, filepath: str, fmt: str = "wav"):
         except ImportError:
             pass  # lameenc not installed, fall through to ffmpeg
         except Exception as e:
-            log.debug("encoding failed, try ffmpeg: %s", e)
+            _log.debug("Non-critical: %s", e)  # encoding failed, try ffmpeg
 
     if fmt not in ("mp3", "ogg"):
         raise ValueError(f"Unsupported format: {fmt}")
@@ -493,12 +492,12 @@ def export_audio(data: np.ndarray, sr: int, filepath: str, fmt: str = "wav"):
             if result.returncode == 0 and os.path.isfile(filepath):
                 os.unlink(tmp.name)
                 return
-        except Exception as e:
-            log.debug("ignored: %s", e)
+        except Exception as _ex:
+            _log.debug("Non-critical: %s", _ex)
         finally:
             if tmp:
                 try: os.unlink(tmp.name)
-                except Exception as e: log.debug("ignored: %s", e)
+                except Exception as _ex: _log.debug("Non-critical: %s", _ex)
 
     # pydub fallback
     tmp = None
@@ -515,15 +514,15 @@ def export_audio(data: np.ndarray, sr: int, filepath: str, fmt: str = "wav"):
     except Exception:
         if tmp:
             try: os.unlink(tmp.name)
-            except Exception as e: log.debug("ignored: %s", e)
+            except Exception as _ex: _log.debug("Non-critical: %s", _ex)
 
     # Auto-download ffmpeg and retry
     try:
         download_ffmpeg()
         # Retry now that ffmpeg is available
         return export_audio(data, sr, filepath)
-    except Exception as e:
-        log.debug("ignored: %s", e)
+    except Exception as _ex:
+        _log.debug("Non-critical: %s", _ex)
 
     raise RuntimeError(
         f"Cannot export to {fmt.upper()}.\n\n"

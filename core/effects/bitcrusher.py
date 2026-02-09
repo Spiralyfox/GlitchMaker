@@ -44,4 +44,4 @@ def bitcrush(audio_data: np.ndarray, start: int, end: int,
                 segment[:len(held), ch] = held[:len(segment)]
     
     result[start:end] = segment[:len(result[start:end])]
-    return np.clip(result, -1.0, 1.0)
+    return result

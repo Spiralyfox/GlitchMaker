@@ -59,4 +59,4 @@ def shuffle(audio_data: np.ndarray, start: int, end: int,
         )
 
     result[start:end] = output
-    return np.clip(result, -1.0, 1.0)
+    return result

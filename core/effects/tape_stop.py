@@ -73,4 +73,4 @@ def tape_stop(audio_data: np.ndarray, start: int, end: int,
         )
 
     result[start:end] = combined
-    return np.clip(result, -1.0, 1.0)
+    return result

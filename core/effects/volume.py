@@ -7,4 +7,4 @@ def volume(audio_data: np.ndarray, start: int, end: int,
     out = audio_data.copy()
     g = gain_pct / 100.0
     out[start:end] = (out[start:end] * g).clip(-1.0, 1.0)
-    return np.clip(out, -1.0, 1.0)
+    return out
