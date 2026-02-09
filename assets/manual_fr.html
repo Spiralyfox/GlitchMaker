@@ -1,295 +1,288 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="utf-8">
+<meta charset="UTF-8">
 <title>Glitch Maker — Mode d'emploi</title>
 <style>
-  body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: #e0e0e0;
-         max-width: 860px; margin: 0 auto; padding: 24px 32px; line-height: 1.7; }
-  h1 { color: #6c5ce7; border-bottom: 2px solid #6c5ce7; padding-bottom: 8px; font-size: 26px; }
-  h2 { color: #a29bfe; margin-top: 36px; font-size: 18px; }
-  h3 { color: #dfe6e9; margin-top: 20px; font-size: 14px; }
-  code { background: #16213e; padding: 2px 6px; border-radius: 3px; font-size: 13px; }
-  kbd { background: #0f3460; padding: 2px 8px; border-radius: 4px; border: 1px solid #533483; font-size: 12px; }
-  .tip { background: #6c5ce722; border-left: 3px solid #6c5ce7; padding: 8px 14px; margin: 14px 0; border-radius: 4px; }
-  .listen { background: #e17055aa; border-left: 3px solid #e17055; padding: 6px 14px; margin: 10px 0; border-radius: 4px; font-style: italic; font-size: 13px; }
-  a { color: #6c5ce7; }
-  table { border-collapse: collapse; width: 100%; margin: 10px 0; }
-  th, td { text-align: left; padding: 6px 12px; border-bottom: 1px solid #2d3436; font-size: 13px; }
-  th { color: #a29bfe; font-size: 12px; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0d0d1a; color: #e0e0e0; max-width: 820px; margin: 0 auto; padding: 24px; line-height: 1.7; }
+h1 { color: #7c5cfc; font-size: 28px; border-bottom: 2px solid #2a2a4a; padding-bottom: 10px; }
+h2 { color: #7c5cfc; font-size: 20px; margin-top: 36px; border-bottom: 1px solid #2a2a4a; padding-bottom: 6px; }
+h3 { color: #a78bfa; font-size: 15px; margin-top: 24px; }
+p { margin: 8px 0; }
+b { color: #c0c0e0; }
+a { color: #7c5cfc; }
+code { background: #1a1a30; padding: 2px 6px; border-radius: 3px; font-size: 13px; }
+kbd { background: #252545; border: 1px solid #3a3a5a; border-radius: 4px; padding: 2px 7px; font-size: 12px; color: #e0e0e0; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+th, td { border: 1px solid #2a2a4a; padding: 8px 12px; text-align: left; font-size: 13px; }
+th { background: #1a1a30; color: #a78bfa; }
+.tip { background: #1a1a30; border-left: 3px solid #7c5cfc; padding: 10px 14px; margin: 12px 0; border-radius: 0 6px 6px 0; font-size: 13px; }
+.audio-desc { background: #151528; border-left: 3px solid #f59e0b; padding: 8px 14px; margin: 8px 0; border-radius: 0 6px 6px 0; font-size: 13px; font-style: italic; color: #d4d4aa; }
 </style>
 </head>
 <body>
 
 <h1>🎵 Glitch Maker — Mode d'emploi</h1>
 
-<p>Glitch Maker est une station d'effets audio conçue pour le sound design créatif, le glitch art et le traitement vocal. Il permet d'empiler, réordonner et activer/désactiver des effets sur n'importe quel fichier audio sans jamais perdre l'original — tout est non-destructif.</p>
+<p>Glitch Maker est une station de travail d'effets audio créatifs pour le sound design, le glitch art sonore et l'expérimentation musicale. Ce mode d'emploi couvre chaque fonctionnalité du logiciel : ce qu'elle fait, comment s'en servir, et ce que ça donne au niveau sonore.</p>
 
 <!-- ═══════════════════════════════════ -->
-<h2>📂 Ouvrir &amp; Gérer les fichiers</h2>
+<h2>🖥️ Vue d'ensemble de l'interface</h2>
 
-<p><b>Ouvrir un fichier :</b> <kbd>Ctrl+O</kbd> ou <b>Fichier &gt; Ouvrir</b>. Formats supportés : WAV, MP3, FLAC, OGG. Votre audio apparaît comme un clip sur la timeline avec sa waveform dessinée au centre.</p>
+<p>L'interface est divisée en trois colonnes principales :</p>
 
-<p><b>Importer d'autres fichiers :</b> Ouvrez d'autres fichiers pour les ajouter comme nouveaux clips sur la timeline. Chaque clip reçoit une couleur distincte.</p>
+<p><b>Panneau gauche — Effets</b> : Liste les 27 effets disponibles organisés par catégorie. Utilisez la barre de recherche pour filtrer, cliquez sur un effet pour l'appliquer. Marquez vos favoris avec l'étoile. Basculez entre la vue effets (FX) et presets (PR).</p>
 
-<p><b>Nouveau projet :</b> <kbd>Ctrl+N</kbd> efface tout. Si vous avez des changements non sauvegardés, on vous propose de sauvegarder d'abord.</p>
+<p><b>Centre — Waveform &amp; Timeline</b> : L'espace de travail principal. En haut, la forme d'onde audio où vous pouvez sélectionner des zones, placer des marqueurs et voir la tête de lecture. En dessous, la timeline affiche les clips sous forme de blocs colorés. Entre les deux, la barre de transport (Play/Pause/Stop, affichage du temps, volume). Un analyseur de spectre en temps réel se trouve en bas à droite.</p>
 
-<p><b>Sauvegarder :</b> <kbd>Ctrl+S</kbd> enregistre un fichier <code>.gspi</code> contenant votre audio, tous vos effets et votre historique d'annulation. Rouvrez-le plus tard pour reprendre exactement où vous en étiez.</p>
-
-<p><b>Exporter :</b> <b>Fichier &gt; Exporter</b> rend l'audio final en WAV, MP3 ou FLAC. Vous pouvez aussi exporter les clips individuels dans des fichiers séparés (export stems).</p>
+<p><b>Panneau droit — Historique des effets</b> : Chaque effet appliqué apparaît ici sous forme de carte. Vous pouvez activer/désactiver chaque effet (icône œil), le supprimer (icône poubelle), ou utiliser Ctrl+Z/Ctrl+Y pour annuler/refaire. Les effets sont appliqués dans l'ordre de haut en bas.</p>
 
 <!-- ═══════════════════════════════════ -->
-<h2>🎚️ L'interface</h2>
+<h2>📂 Charger &amp; Sauvegarder l'audio</h2>
 
-<p>La fenêtre est divisée en trois zones :</p>
+<p><b>File &gt; Open</b> (ou glisser-déposer) — Chargez des fichiers MP3, WAV, FLAC, OGG, ou tout format supporté par FFmpeg. La waveform et la timeline se mettent à jour immédiatement.</p>
 
-<p><b>Panneau gauche</b> — Le navigateur d'effets et les presets. Parcourez les effets en cliquant dessus pour les appliquer à votre audio.</p>
+<p><b>File &gt; Save / Save As</b> — Exportez l'audio traité. Choisissez WAV pour une qualité sans perte ou MP3/FLAC/OGG pour des formats compressés. Toute la chaîne d'effets est appliquée au fichier de sortie.</p>
 
-<p><b>Centre</b> — L'affichage waveform (en haut) et la timeline (en bas). La waveform montre tout votre audio avec zoom (molette souris). La timeline montre vos clips individuels et permet de les réarranger. Chacun a son propre zoom indépendant — la molette ne zoome que la zone survolée.</p>
+<p><b>File &gt; Record</b> — Enregistrez de l'audio directement depuis votre micro. Une boîte de dialogue d'enregistrement apparaît avec un indicateur de niveau. Appuyez sur Stop pour terminer et l'audio enregistré se charge dans l'espace de travail.</p>
 
-<p><b>Panneau droit</b> — L'historique des effets. Chaque effet appliqué apparaît ici avec son horodatage, séparé par des lignes fines. Vous pouvez activer/désactiver ou supprimer n'importe quel effet à tout moment.</p>
-
-<p>Entre la waveform et la timeline se trouve la <b>barre de transport</b> : Lecture, Pause, Stop et l'affichage du temps. Quand vous zoomez, une <b>minimap</b> apparaît au-dessus de la waveform — cliquez et glissez dessus pour naviguer dans la waveform. La timeline a sa propre barre de défilement quand zoomée.</p>
+<div class="tip">💡 FFmpeg est téléchargé automatiquement au premier lancement s'il n'est pas trouvé sur votre système. Cela active le support MP3, FLAC et OGG.</div>
 
 <!-- ═══════════════════════════════════ -->
-<h2>🔊 Lecture</h2>
+<h2>▶️ Lecture &amp; Transport</h2>
 
-<p>Appuyez sur <kbd>Espace</kbd> pour lire/stopper. La <b style="color:#22c55e">ligne verte</b> (tête de lecture) se déplace sur la waveform et la timeline pendant la lecture.</p>
+<p>La barre de transport en bas de la zone centrale contrôle la lecture :</p>
 
-<p><b>Cliquez sur la waveform</b> pour placer une <b style="color:#3b82f6">ancre bleue</b> — la lecture démarre depuis là. Quand vous appuyez sur Stop, la position revient à l'ancre bleue. L'ancre est synchronisée entre la waveform et la timeline — glissez-la dans l'une ou l'autre pour la repositionner. Cliquez et glissez pour <b>sélectionner une zone</b> — la lecture bouclera sur cette sélection.</p>
+<p><b>Bouton PLAY / PAUSE</b> — Cliquez pour démarrer la lecture. Pendant la lecture, le bouton se transforme en PAUSE. Cliquer sur PAUSE gèle la lecture à la position actuelle. Appuyer à nouveau sur Play (ou <kbd>Espace</kbd>) reprend exactement là où vous avez mis en pause. Utile pour écouter attentivement un moment précis.</p>
 
-<p><b>Cliquez sur la timeline</b> pour sauter à n'importe quelle position. Cliquez sur un clip pour le sélectionner.</p>
+<p><b>Bouton STOP</b> — Arrête la lecture et ramène la tête de lecture à sa position de départ : l'ancre bleue si elle est placée, le début de la sélection si elle existe, ou le tout début du fichier.</p>
 
-<div class="tip">💡 La sortie audio utilise le périphérique par défaut de votre système. Si vous branchez un casque après le lancement, allez dans <b>Options &gt; Périphériques audio</b> et cliquez <b>Actualiser</b> pour détecter le nouveau périphérique.</div>
+<p><b>Boucle automatique</b> — Quand il n'y a pas de sélection rouge et que la lecture atteint la fin du fichier, elle reboucle automatiquement au début au lieu de s'arrêter. S'il y a une sélection, la lecture boucle dans cette sélection.</p>
 
-<!-- ═══════════════════════════════════ -->
-<h2>🎨 Appliquer des effets</h2>
+<p><b>Curseur de volume</b> — Règle le volume de sortie de 0% à 100%. Le pourcentage est affiché à côté du curseur.</p>
 
-<p>C'est le cœur de Glitch Maker. Voici le processus :</p>
+<p><b>Affichage du temps</b> — Montre la position actuelle / durée totale au format MM:SS.ms.</p>
 
-<p><b>1.</b> Optionnellement, <b>sélectionnez une zone</b> sur la waveform (cliquer + glisser). Si vous ne sélectionnez rien, l'effet s'applique à l'audio entier.<br>
-<b>2.</b> Cliquez sur un <b>nom d'effet</b> dans le panneau gauche.<br>
-<b>3.</b> Un dialogue s'ouvre avec des curseurs et contrôles. Ajustez les paramètres.<br>
-<b>4.</b> Cliquez <b>Preview</b> pour écouter un aperçu de 5 secondes.<br>
-<b>5.</b> Cliquez <b>Apply</b> pour valider l'effet.</p>
-
-<p>L'effet apparaît dans le panneau <b>historique des effets</b> à droite. Votre audio original n'est jamais modifié — les effets sont re-rendus par-dessus l'original à chaque fois.</p>
-
-<h3>Gérer les effets appliqués</h3>
-<p><b>●</b> Activer/Désactiver — Cliquez pour bypasser un effet sans le supprimer. L'audio se re-rend instantanément.<br>
-<b>✕</b> Supprimer — Retire l'effet définitivement.</p>
+<p><b>Info sélection</b> — Quand une zone est sélectionnée, la durée de la sélection est affichée (ex : "Sel: 00:01.25").</p>
 
 <!-- ═══════════════════════════════════ -->
-<h2>🔧 Référence des effets</h2>
+<h2>🎯 Waveform &amp; Sélection</h2>
 
-<h3>Bitcrusher</h3>
-<p>Réduit la profondeur de bits et le taux d'échantillonnage, créant un son numérique lo-fi rétro et crunchy — comme les vieilles consoles de jeu ou les samplers bas de gamme.</p>
-<p><b>Bit Depth</b> — Plus bas = plus distordu. À 4 bits, l'audio sonne comme une onde carrée. <b>Downsample</b> — Des valeurs élevées ajoutent de l'aliasing et une texture « en escalier ».</p>
-<div class="listen">🔈 Imaginez une voix enregistrée à travers un Game Boy — métallique, granuleuse, avec des marches d'escalier dans la waveform.</div>
+<p><b>Ancre bleue</b> — Cliquez n'importe où sur la waveform pour placer une <b style="color:#3b82f6">ligne d'ancre bleue</b>. La lecture démarre depuis cet endroit. Quand vous appuyez sur Stop, la tête de lecture revient à l'ancre. C'est un repère "reprendre ici".</p>
 
-<h3>Buffer Freeze</h3>
-<p>Capture un minuscule extrait audio et le répète en boucle, comme un CD qui saute ou un moment de glitch figé.</p>
-<p><b>Taille du buffer (ms)</b> — Longueur du fragment gelé. Court (10-50ms) = tonalité bourdonnante. Long (100-500ms) = fragment reconnaissable répété.</p>
-<div class="listen">🔈 Un chanteur tient une note, puis soudain le même fragment de 30ms se répète sans arrêt — un bégaiement rapide et robotique.</div>
+<p><b>Sélection rouge</b> — Cliquez et glissez sur la waveform pour sélectionner une zone (affichée en rouge). Les effets ne s'appliqueront qu'à la zone sélectionnée. Sans sélection, les effets s'appliquent à l'audio entier.</p>
 
-<h3>Chorus</h3>
-<p>Duplique l'audio avec de légères variations de hauteur et de timing, simulant le son de plusieurs instruments jouant ensemble.</p>
-<p><b>Depth</b> — Amplitude du désaccordage. <b>Rate</b> — Vitesse d'oscillation. <b>Voices</b> — Nombre de copies. <b>Mix</b> — Balance sec/mouillé.</p>
-<div class="listen">🔈 Une ligne de guitare devient plus large et scintillante, comme deux guitaristes jouant la même partie avec de légères différences naturelles.</div>
+<p><b>Sélection intelligente pendant la lecture</b> — Si l'audio est déjà en lecture et que vous commencez à glisser pour créer une sélection, la lecture se met automatiquement en pause. Quand vous relâchez la souris, la lecture reprend dans la zone nouvellement sélectionnée. Un simple clic (sans glisser) repositionne l'ancre et reprend depuis là.</p>
 
-<h3>Datamosh</h3>
-<p>Réarrange les données audio brutes par blocs, créant des artefacts de corruption numérique — l'équivalent audio du datamoshing vidéo.</p>
-<p><b>Block Size</b> — Taille des morceaux mélangés. <b>Chaos</b> — Quantité d'aléatoire introduite.</p>
-<div class="listen">🔈 Une voix propre a soudain des rafales de bruit brouillé, des micro-silences et des fragments dans le mauvais ordre — comme un fichier corrompu.</div>
+<p><b>Menu clic droit</b> — Faites un clic droit dans une sélection pour accéder aux options de coupe :</p>
+<p>• <b>Couper — Remplacer par du silence</b> : la zone sélectionnée devient silencieuse. Le clip se divise en 3 parties (avant, silence, après).<br>
+• <b>Couper — Supprimer &amp; recoller</b> : la zone sélectionnée est supprimée et les parties restantes sont jointes. L'audio devient plus court.</p>
 
-<h3>Delay</h3>
-<p>Ajoute des échos du son original, répétés après un temps défini.</p>
-<p><b>Delay (ms)</b> — Temps entre les échos. 100-300ms = slapback. 500ms+ = échos distincts. <b>Feedback</b> — Nombre de répétitions. <b>Mix</b> — Balance sec/écho.</p>
-<div class="listen">🔈 Vous dites « bonjour » et entendez « bonjour... bonjour... bonjour... » qui s'estompe, comme crier dans un canyon.</div>
-
-<h3>Distortion</h3>
-<p>Sature le signal audio, ajoutant des harmoniques et du grain. Plusieurs modes disponibles.</p>
-<p><b>Drive</b> — Intensité de la distorsion. <b>Tone</b> — Brillance. <b>Mode</b> — Type d'écrêtage (hard, soft, foldback).</p>
-<div class="listen">🔈 Une voix propre devient agressive et crunchy, comme chanter à travers un ampli guitare cassé poussé au maximum.</div>
-
-<h3>Filter</h3>
-<p>Supprime les fréquences au-dessus ou en-dessous d'un point de coupure.</p>
-<p><b>Cutoff (Hz)</b> — Le seuil fréquentiel. <b>Type</b> — Passe-bas (supprime les aigus, rend sourd), passe-haut (supprime les graves, rend mince), passe-bande (isole une bande). <b>Resonance</b> — Amplifie les fréquences proches de la coupure.</p>
-<div class="listen">🔈 Passe-bas à 500Hz : une voix sonne comme à travers un mur — sourde et lointaine. Passe-haut à 2kHz : seule la brillance et les sibilances restent.</div>
-
-<h3>Granular</h3>
-<p>Découpe l'audio en grains minuscules (5-200ms chacun), puis les disperse et les superpose. Crée des textures à partir de nuages de fragments sonores.</p>
-<p><b>Grain size (ms)</b> — Longueur de chaque grain. <b>Density</b> — Combien de grains se chevauchent. <b>Chaos</b> — Aléatoire des positions.</p>
-<div class="listen">🔈 Un accord de piano se dissout en un nuage scintillant de fragments — comme si le son était pulvérisé en particules qui flottent et se chevauchent.</div>
-
-<h3>OTT (Over The Top)</h3>
-<p>Compression multibande extrême qui rend tout plus fort et plus percutant — un son signature en EDM et hyperpop.</p>
-<p><b>Depth</b> — Agressivité de la compression. À 100%, les parties silencieuses deviennent aussi fortes que les pics.</p>
-<div class="listen">🔈 Une voix dynamique devient artificiellement constante en volume — chaque murmure aussi fort que chaque cri, avec une présence « en pleine face ».</div>
-
-<h3>Pan / Stéréo</h3>
-<p>Contrôle le positionnement gauche-droite de l'audio dans le champ stéréo.</p>
-<p><b>Pan</b> — Déplace l'audio entre gauche (-100%) et droite (+100%). <b>Mono</b> — Fusionne le stéréo en mono.</p>
-<div class="listen">🔈 Une voix centrée vient maintenant entièrement du haut-parleur gauche — ou balaye lentement de gauche à droite.</div>
-
-<h3>Phaser</h3>
-<p>Crée un effet de balayage tourbillonnant en combinant le signal avec une copie déphasée.</p>
-<p><b>Rate</b> — Vitesse du balayage. <b>Depth</b> — Intensité. <b>Stages</b> — Nombre d'étages (plus = plus profond). <b>Mix</b> — Sec/mouillé.</p>
-<div class="listen">🔈 Un pad développe un lent « whoosh » aquatique qui balaye de haut en bas — comme écouter à travers un ventilateur rotatif.</div>
-
-<h3>Pitch Shift</h3>
-<p>Déplace la hauteur vers le haut ou le bas sans changer la vitesse.</p>
-<p><b>Semitones</b> — Écart en demi-tons. +12 = une octave au-dessus. -12 = une octave en-dessous. Petites valeurs (±1-3) subtiles ; grandes valeurs pour des effets alien ou chipmunk.</p>
-<div class="listen">🔈 À +5 demi-tons, une voix masculine sonne comme une voix plus haute, légèrement artificielle. À -7, elle devient un grondement profond et menaçant.</div>
-
-<h3>Reverse</h3>
-<p>Joue l'audio à l'envers. Aucun paramètre — retourne simplement la sélection entière.</p>
-<div class="listen">🔈 Un mot parlé devient une articulation étrange et éthérée. Les cymbales font un « swell » lent au lieu d'une attaque nette. Idéal pour les textures atmosphériques.</div>
-
-<h3>Ring Mod (Modulation en anneau)</h3>
-<p>Multiplie l'audio par une onde sinusoïdale, créant des harmoniques métalliques ou robotiques.</p>
-<p><b>Frequency</b> — Fréquence de modulation. Basse (20-100Hz) = type tremolo. Moyenne (200-1000Hz) = robotique. Haute (1000+Hz) = cloches métalliques. <b>Mix</b> — Sec/mouillé.</p>
-<div class="listen">🔈 Une voix devient robotique et métallique, comme un Dalek — chaque mot produit des bandes latérales harmoniques étranges qui la rendent inhumaine.</div>
-
-<h3>Saturation</h3>
-<p>Ajoute une distorsion harmonique chaude, de la subtile chaleur analogique à l'overdrive lourd.</p>
-<p><b>Type</b> — Courbe de saturation (tape, tube, etc.). <b>Drive</b> — Intensité.</p>
-<div class="listen">🔈 À faible drive, une voix gagne en chaleur et en présence — comme enregistrée sur bande analogique. À fort drive, elle devient épaisse et floue.</div>
-
-<h3>Shuffle</h3>
-<p>Découpe l'audio en tranches égales et les réarrange aléatoirement — comme couper une bande en morceaux et les réassembler à l'aveugle.</p>
-<p><b>Num Slices</b> — Nombre de morceaux. Plus de tranches = plus chaotique.</p>
-<div class="listen">🔈 Une mélodie de 4 mesures est coupée en 16 morceaux et réarrangée au hasard — des fragments familiers apparaissent dans un ordre inattendu.</div>
-
-<h3>Stutter</h3>
-<p>Répète rapidement de petites sections d'audio, créant des patterns de glitch rythmiques.</p>
-<p><b>Repeats</b> — Nombre de répétitions. <b>Decay</b> — Atténuation du volume. <b>Mode</b> — Pattern du stutter (régulier, accélérant, aléatoire).</p>
-<div class="listen">🔈 Une voix fait « J'a-a-a-a-adore » — le même petit fragment mitraille rapidement avant que l'audio continue normalement.</div>
-
-<h3>Tape Stop</h3>
-<p>Simule l'arrêt d'un magnétophone — l'audio ralentit et descend en hauteur jusqu'à l'arrêt.</p>
-<p><b>Duration (ms)</b> — Durée du ralentissement. Court (100ms) = un « woomp » rapide. Long (2000ms) = une spirale descendante dramatique.</p>
-<div class="listen">🔈 La musique se déforme vers le bas en hauteur et ralentit jusqu'à l'arrêt — comme si quelqu'un avait débranché la platine vinyle.</div>
-
-<h3>Time Stretch</h3>
-<p>Change la vitesse de l'audio sans changer la hauteur.</p>
-<p><b>Factor</b> — En-dessous de 1.0 accélère, au-dessus ralentit. À 0.5, l'audio joue deux fois plus vite. À 2.0, il prend deux fois plus de temps.</p>
-<div class="listen">🔈 À 1.5×, un couplet de rap rapide ralentit à un rythme rêveur et étiré — même hauteur, mais avec une qualité éthérée et spacieuse.</div>
-
-<h3>Tremolo</h3>
-<p>Module le volume de haut en bas rythmiquement, créant un effet de pulsation.</p>
-<p><b>Rate (Hz)</b> — Vitesse de la pulsation. <b>Depth</b> — Amplitude de la variation. <b>Shape</b> — Forme d'onde (sine = doux, square = haché on/off).</p>
-<div class="listen">🔈 Un accord de guitare pulse rythmiquement — à vitesse rapide ça sonne comme un hélicoptère, à vitesse lente comme une respiration douce.</div>
-
-<h3>Vinyl</h3>
-<p>Ajoute des imperfections de disque vinyle : craquements, souffle, vibrato et bruit de surface.</p>
-<p><b>Amount</b> — Intensité. Bas = chaleur subtile et pops occasionnels. Haut = très dégradé, comme un vieux disque usé.</p>
-<div class="listen">🔈 Votre audio numérique propre gagne le caractère chaleureux d'un vieux disque vinyle — des craquements doux et des pops tout au long, avec une hauteur légèrement instable.</div>
-
-<h3>Volume</h3>
-<p>Contrôle simple du gain — rend l'audio plus fort ou plus silencieux.</p>
-<p><b>Gain (%)</b> — Pourcentage du volume original. 200% = deux fois plus fort. 50% = moitié.</p>
+<p><b>Zoom waveform</b> — Faites défiler la molette de la souris sur la waveform pour zoomer/dézoomer horizontalement. Une minimap apparaît au-dessus de la waveform montrant votre vue actuelle. Cliquez et glissez la minimap pour naviguer dans la waveform zoomée.</p>
 
 <!-- ═══════════════════════════════════ -->
-<h2>🎤 Presets vocaux</h2>
+<h2>🎼 Timeline</h2>
 
-<p>Cliquez sur l'onglet <b>PR</b> dans le panneau gauche pour accéder aux 20 presets vocaux prêts à l'emploi. Chaque preset est une combinaison d'effets pré-configurée pour un son spécifique. Sélectionnez votre audio et cliquez sur un nom de preset — tout s'applique d'un coup.</p>
+<p>La timeline se situe sous la waveform et affiche votre audio sous forme de blocs de clips colorés. Chaque fois que vous appliquez un effet à une sélection, un nouveau clip est créé montrant exactement quelle portion a été affectée.</p>
 
-<table>
-<tr><th>Preset</th><th>Ce que ça sonne</th></tr>
-<tr><td>Hard Autotune (T-Pain)</td><td>Voix robotique, hauteur parfaitement corrigée avec accrochage net</td></tr>
-<tr><td>Soft Autotune</td><td>Correction de hauteur douce — naturelle mais polie</td></tr>
-<tr><td>Autotune + Reverb Wash</td><td>Voix tunée nageant dans une reverb spacieuse</td></tr>
-<tr><td>Hyperpop Vocal</td><td>Brillante, hyper-traitée, compressée et pitchée vers le haut</td></tr>
-<tr><td>Hyperpop Lite</td><td>Version plus subtile de l'hyperpop</td></tr>
-<tr><td>Digital Angel</td><td>Éthérée, aiguë, noyée de reverb — angélique et synthétique</td></tr>
-<tr><td>Digicore Grit</td><td>Voix brute, distordue, au son numérique</td></tr>
-<tr><td>Emocore Vocal</td><td>Voix émotionnelle et compressée avec traînée de reverb</td></tr>
-<tr><td>Robot Voice</td><td>Métallique, monotone, parole mécanique</td></tr>
-<tr><td>Vocoder Robot</td><td>Effet vocoder classique — parole synthétique et bourdonnante</td></tr>
-<tr><td>Nightcore</td><td>Pitchée et accélérée — le son signature des remix anime</td></tr>
-<tr><td>Chipmunk</td><td>Pitch très aigu — voix de personnage de dessin animé</td></tr>
-<tr><td>Demon Voice</td><td>Grave, sombre, pitchée vers le bas avec distorsion</td></tr>
-<tr><td>Witch House</td><td>Sombre, ralentie, très reverb et filtrée</td></tr>
-<tr><td>Lo-fi Vocal</td><td>Chaude, sourde, dégradation type vinyle</td></tr>
-<tr><td>Phonk Vocal</td><td>Gritty, sombre, distordue avec caractère lo-fi</td></tr>
-<tr><td>Alien Voice</td><td>Étrange, d'un autre monde, ring-modulée et shiftée</td></tr>
-<tr><td>Broken Radio</td><td>Band-passée, craquelante, comme une radio AM endommagée</td></tr>
-<tr><td>Vaporwave</td><td>Ralentie, pitchée vers le bas, rêveuse et nostalgique</td></tr>
-<tr><td>Glitchcore Vocal</td><td>Stutterée, mélangée, bitcrushée — chaos maximum</td></tr>
-</table>
+<p><b>Cliquez sur la timeline</b> pour sauter à n'importe quelle position. Cliquez sur un clip pour le sélectionner (bordure surlignée).</p>
 
-<!-- ═══════════════════════════════════ -->
-<h2>🎬 Timeline &amp; Clips</h2>
+<p><b>Zoom timeline</b> — Faites défiler la molette sur la timeline pour zoomer/dézoomer indépendamment de la waveform. Une barre de défilement horizontale apparaît sous la timeline quand on est zoomé.</p>
 
-<p>La timeline en bas montre tous vos clips audio disposés en séquence. Chaque clip est un bloc coloré montrant sa waveform et sa durée.</p>
-
-<p><b>Sélectionner un clip</b> — Cliquez dessus. La waveform met en surbrillance la zone correspondante.<br>
-<b>Réordonner</b> — Glissez un clip à gauche ou droite pour changer sa position.<br>
-<b>Zoom</b> — Utilisez la molette sur la timeline pour zoomer/dézoomer indépendamment de la waveform. Une barre de défilement apparaît sous la timeline quand zoomé. Un indicateur de zoom apparaît en bas à droite.<br>
-<b>Clic droit sur un clip</b> pour ces opérations :</p>
-
-<p><b>Split</b> — Coupe le clip au curseur en deux clips avec des couleurs distinctes.<br>
-<b>Dupliquer</b> — Crée une copie identique juste après l'original.<br>
-<b>Supprimer</b> — Retire le clip (fonctionne aussi avec <kbd>Suppr</kbd>).<br>
-<b>Fade In / Fade Out</b> — Montée ou descente progressive du volume.</p>
-
-<h3>✂️ Couper une sélection</h3>
-<p>Sélectionnez une zone sur la waveform (cliquer + glisser), puis <b>clic droit dans la sélection rouge</b> pour accéder aux options de coupe :</p>
-<p><b>Couper — Remplacer par du silence</b> — La zone sélectionnée devient silencieuse. Le clip est découpé en 3 parties (avant, silence, après).<br>
-<b>Couper — Supprimer &amp; recoller</b> — La zone sélectionnée est supprimée et les parties restantes sont jointes. Le clip devient plus court.</p>
-<p>Chaque clip résultant reçoit une couleur unique pour les distinguer facilement.</p>
-
-<div class="tip">💡 Les opérations structurelles (split, couper, dupliquer, supprimer, réordonner) réinitialisent les effets pour garder la cohérence. Les fades préservent vos effets existants.</div>
-
-<!-- ═══════════════════════════════════ -->
-<h2>↩️ Annuler &amp; Refaire</h2>
-
-<p><kbd>Ctrl+Z</kbd> pour annuler, <kbd>Ctrl+Y</kbd> pour refaire. Jusqu'à 20 niveaux. Chaque action est enregistrée. L'annulation fonctionne en re-rendant depuis votre audio original, donc c'est toujours fidèle.</p>
-
-<!-- ═══════════════════════════════════ -->
-<h2>🎵 Métronome &amp; Grille de tempo</h2>
-
-<p>Cliquez sur le bouton <b>BPM</b> dans la barre d'outils pour activer le métronome. Il joue des clics en synchronisation avec l'audio au tempo spécifié. La grille de tempo dessine des lignes verticales sur la waveform alignées aux temps et mesures, aidant à synchroniser vos éditions.</p>
-
-<p>Ouvrez les paramètres du métronome (petite icône engrenage) pour ajuster le tempo, le volume, les temps par mesure et les subdivisions.</p>
+<p><b>Marqueurs de temps</b> — L'en-tête de la timeline affiche les marqueurs de temps (00:00.00, 00:00.50, etc.) qui s'adaptent au niveau de zoom.</p>
 
 <!-- ═══════════════════════════════════ -->
 <h2>📌 Marqueurs</h2>
 
-<p>Appuyez sur <kbd>M</kbd> pendant la lecture pour poser un marqueur à la position actuelle. Les marqueurs apparaissent comme des drapeaux colorés sur la waveform. Utilisez <kbd>Ctrl+→</kbd> et <kbd>Ctrl+←</kbd> pour naviguer entre les marqueurs. Utile pour marquer les sections (couplet, refrain, drop).</p>
+<p>Appuyez sur <kbd>M</kbd> pour ajouter un marqueur à la position actuelle de la tête de lecture. Les marqueurs apparaissent comme des lignes verticales sur la waveform et sont utiles pour repérer des moments importants.</p>
+
+<p><b>Naviguer</b> : <kbd>Ctrl+→</kbd> saute au marqueur suivant, <kbd>Ctrl+←</kbd> au précédent.</p>
+
+<p><b>Supprimer</b> : Clic droit sur la waveform près d'un marqueur pour accéder aux options.</p>
+
+<!-- ═══════════════════════════════════ -->
+<h2>🎵 Métronome &amp; Grille de tempo</h2>
+
+<p>Cliquez sur le bouton <b>Metronome</b> dans la barre d'outils pour l'activer/désactiver. Le métronome joue des clics synchronisés avec l'audio au BPM spécifié. La grille de tempo dessine des lignes verticales sur la waveform alignées aux temps, aidant à synchroniser vos éditions musicalement.</p>
+
+<p>Ouvrez <b>Options &gt; Métronome</b> pour configurer :</p>
+<p>• <b>Activer/Désactiver</b> — Active ou désactive le clic du métronome.<br>
+• <b>BPM</b> — Entrez un nombre directement (20–300) pour régler le tempo.<br>
+• <b>Volume</b> — Curseur avec pourcentage en direct pour contrôler le volume du métronome.</p>
+
+<div class="audio-desc">🔊 Le métronome produit un clic court et sec à chaque temps. À 120 BPM, vous entendrez 2 clics par seconde. La grille de tempo sur la waveform vous aide à aligner visuellement vos sélections sur les temps musicaux.</div>
+
+<!-- ═══════════════════════════════════ -->
+<h2>🔊 Analyseur de spectre</h2>
+
+<p>L'analyseur de spectre en temps réel s'affiche en bas à droite pendant la lecture. Il montre le contenu fréquentiel de l'audio sous forme de graphique à barres, des basses fréquences (graves) à gauche aux hautes fréquences (aigus) à droite. Cela vous aide à visualiser l'impact sonore de vos effets.</p>
+
+<!-- ═══════════════════════════════════ -->
+<h2>🎛️ Effets — Référence complète</h2>
+
+<p>Pour appliquer un effet : sélectionnez optionnellement une zone sur la waveform, puis cliquez sur l'effet dans le panneau gauche. Une boîte de dialogue s'ouvre avec les paramètres. Ajustez selon vos goûts et cliquez Appliquer. L'effet apparaît dans l'historique à droite.</p>
+
+<div class="tip">💡 Si aucune zone n'est sélectionnée, l'effet s'applique à l'intégralité du fichier audio.</div>
+
+<!-- ── Basics ── -->
+<h3>📦 Basics (Fondamentaux)</h3>
+
+<p><b>Reverse</b> — Retourne l'audio à l'envers. Aucun paramètre nécessaire.</p>
+<div class="audio-desc">🔊 Un enregistrement vocal lu à l'envers ressemble à une langue extraterrestre — les syllabes deviennent floues, les attaques deviennent des décroissances. Un coup de batterie devient une montée progressive. Le reverse est la base de nombreuses techniques glitch et ambient.</div>
+
+<p><b>Volume</b> — Ajuste le niveau sonore. Paramètre : gain (dB).</p>
+<div class="audio-desc">🔊 Augmentez pour rendre une section silencieuse plus forte, ou réduisez pour créer un effet de fade-out. Un boost extrême (>12dB) causera de la distortion par écrêtage, ce qui peut être un effet créatif voulu.</div>
+
+<p><b>Filter</b> — Applique un filtre fréquentiel. Paramètres : type (passe-bas, passe-haut, passe-bande), fréquence de coupure (Hz), résonance (Q).</p>
+<div class="audio-desc">🔊 Un filtre passe-bas supprime les aigus, rendant le son étouffé comme si on écoutait de la musique à travers un mur. Un filtre passe-haut supprime les graves, rendant le son fin et métallique comme un haut-parleur de téléphone. Le passe-bande isole une bande de fréquences étroite, créant un effet "téléphone" ou "talkie-walkie". Une résonance (Q) élevée crée un pic aigu à la fréquence de coupure, ajoutant une qualité sifflante.</div>
+
+<p><b>Pan / Stéréo</b> — Déplace l'audio dans le champ stéréo. Paramètre : position (gauche à droite).</p>
+<div class="audio-desc">🔊 Un pan tout à gauche fait sortir le son uniquement du haut-parleur gauche. Le centre le garde équilibré. Automatiser le pan crée une sensation de mouvement, comme si le son volait d'une oreille à l'autre.</div>
+
+<!-- ── Pitch & Time ── -->
+<h3>🎵 Pitch &amp; Time (Hauteur &amp; Temps)</h3>
+
+<p><b>Pitch Shift</b> — Change la hauteur sans modifier la vitesse. Paramètre : demi-tons (-12 à +12).</p>
+<div class="audio-desc">🔊 Monter de +12 demi-tons (une octave) donne une voix de chipmunk. Descendre de -12 la rend grave et imposante comme un géant. De petits décalages (±1-3) créent des effets subtils d'harmonisation ou de désaccord. Les valeurs extrêmes créent des textures robotiques et extraterrestres.</div>
+
+<p><b>Time Stretch</b> — Change la vitesse sans modifier la hauteur. Paramètre : facteur d'étirement.</p>
+<div class="audio-desc">🔊 Un facteur de 2.0 rend l'audio deux fois plus lent — un clip d'1 seconde dure 2 secondes en gardant la même hauteur. Un facteur de 0.5 le rend deux fois plus rapide. Un étirement extrême (4x+) crée des nappes ambient rêveuses à partir de n'importe quel matériau source.</div>
+
+<p><b>Tape Stop</b> — Simule un magnétophone qui ralentit jusqu'à l'arrêt. Paramètre : durée.</p>
+<div class="audio-desc">🔊 L'audio ralentit progressivement tandis que la hauteur descend de plus en plus, comme si on débranchait une platine vinyle en pleine lecture. Une courte durée (0.2s) crée un effet "frein DJ" rapide. Des durées plus longues (2s+) créent un ralentissement dramatique et inquiétant.</div>
+
+<p><b>Autotune</b> — Corrige la hauteur vers la note musicale la plus proche. Paramètres : tonalité, force de correction.</p>
+<div class="audio-desc">🔊 À force maximale, chaque note se cale parfaitement sur la note juste — créant l'effet vocal robotique popularisé dans la musique moderne. À force plus faible, la correction est douce et naturelle. Fonctionne mieux sur des sources monophoniques (une seule voix ou instrument).</div>
+
+<p><b>Pitch Drift (Onde ondulée)</b> — Crée une modulation de hauteur ondulante. Paramètres : vitesse, profondeur.</p>
+<div class="audio-desc">🔊 La hauteur oscille doucement de haut en bas comme un vinyle déformé ou un chanteur ivre. Une vitesse rapide avec une profondeur faible sonne comme du vibrato. Une vitesse lente avec une profondeur importante sonne comme une cassette qu'on étire et relâche.</div>
+
+<!-- ── Distortion ── -->
+<h3>🔥 Distortion</h3>
+
+<p><b>Saturation</b> — Ajoute une distorsion harmonique chaude. Paramètre : quantité de drive.</p>
+<div class="audio-desc">🔊 Une légère saturation ajoute de la chaleur et de la présence, comme faire passer l'audio dans un ampli à lampes vintage. Une saturation intense rend le son épais, flou et agressif — transformant une guitare clean en un rugissement grunge.</div>
+
+<p><b>Distortion</b> — Distorsion par écrêtage dur. Paramètres : drive, tonalité.</p>
+<div class="audio-desc">🔊 Plus dur que la saturation — écrase agressivement les crêtes du signal, créant une texture crépitante et grésillante. À des réglages extrêmes, n'importe quelle entrée devient un mur de bruit agressif. Idéal pour rendre les batteries explosives ou les voix démoniaques.</div>
+
+<p><b>Bitcrusher</b> — Réduit la profondeur de bits et/ou le taux d'échantillonnage. Paramètres : profondeur de bits, réduction du taux.</p>
+<div class="audio-desc">🔊 Baisser la profondeur à 8 ou 4 bits donne un son de vieille console de jeux — granuleux, croustillant, numérique. Réduire le taux d'échantillonnage ajoute des artefacts d'aliasing — des harmoniques métalliques et bourdonnantes absentes de l'original. Aux réglages extrêmes (2 bits, taux très bas), tout son devient un cri numérique méconnaissable.</div>
+
+<!-- ── Modulation ── -->
+<h3>🌊 Modulation</h3>
+
+<p><b>Chorus</b> — Double le signal avec de légères variations de hauteur/temps. Paramètres : vitesse, profondeur, mix.</p>
+<div class="audio-desc">🔊 Crée l'illusion de plusieurs voix ou instruments jouant ensemble, comme un chœur. Le son devient plus large, plus riche et chatoyant. Un chorus léger ajoute une épaisseur subtile. Un chorus prononcé crée une texture aqueuse et tourbillonnante.</div>
+
+<p><b>Phaser</b> — Balaye une série de filtres à encoche à travers l'audio. Paramètres : vitesse, profondeur, étages.</p>
+<div class="audio-desc">🔊 Crée un son de balayage et de souffle — comme un avion à réaction qui passe au-dessus. L'effet parcourt des pics et des creux dans le spectre de fréquences. Classique sur les guitares et les nappes synthétiques. Plus d'étages = un balayage plus dramatique et spatial.</div>
+
+<p><b>Tremolo</b> — Modulation rapide du volume. Paramètres : vitesse (Hz), profondeur.</p>
+<div class="audio-desc">🔊 Le volume pulse de haut en bas rythmiquement, comme si quelqu'un tournait rapidement le bouton de volume. Des vitesses lentes (2-4 Hz) créent une pulsation douce. Des vitesses rapides (10-20 Hz) créent un effet de bégaiement mitraillette. À des vitesses extrêmes, ça devient un bourdonnement type ring modulation.</div>
+
+<p><b>Ring Mod</b> — Multiplie le signal par une onde sinusoïdale. Paramètre : fréquence (Hz).</p>
+<div class="audio-desc">🔊 Crée des tons métalliques, inharmoniques et extraterrestres. Les basses fréquences (20-50 Hz) ajoutent un trémolo bourdonnant. Les fréquences moyennes (200-500 Hz) créent des voix robotiques à la Dalek. Les hautes fréquences (1000+ Hz) produisent des textures métalliques et cristallines.</div>
+
+<!-- ── Space & Texture ── -->
+<h3>🌌 Space &amp; Texture (Espace &amp; Texture)</h3>
+
+<p><b>Delay</b> — Répète l'audio après un intervalle de temps. Paramètres : temps de delay (ms), feedback, mix.</p>
+<div class="audio-desc">🔊 Un court delay unique (50-100ms) crée un écho "slapback" comme chanter dans une salle de bain carrelée. Des delays plus longs (300-500ms) créent des échos rythmiques distincts. Un feedback élevé fait se répéter les échos de nombreuses fois, s'accumulant en une nappe sonore qui peut spiraler en feedback infini.</div>
+
+<p><b>Vinyl</b> — Simule les imperfections d'un disque vinyle. Paramètres : craquements, oscillation, bruit.</p>
+<div class="audio-desc">🔊 Ajoute le caractère chaleureux et nostalgique d'un disque vinyle — pops, craquements, bruit de surface et subtile oscillation de hauteur. Des réglages légers donnent l'impression que votre audio est joué sur un vieux tourne-disque. Des réglages lourds le font sonner comme un disque abîmé et poussiéreux trouvé dans un grenier.</div>
+
+<p><b>OTT (Over The Top)</b> — Compression multibande montante/descendante. Paramètres : quantité, bandes.</p>
+<div class="audio-desc">🔊 Rend tout plus fort, plus percutant et plus "dans la face". Les parties silencieuses sont amplifiées, les parties fortes sont domptées. À force maximale, chaque détail de l'audio devient également fort — respirations, bruit de salle, transitoires — créant un son hyper-compressé et intense populaire en musique électronique.</div>
+
+<p><b>Robotic Voice</b> — Transformation robotique de type vocodeur. Paramètres : fréquence porteuse, formant.</p>
+<div class="audio-desc">🔊 Transforme tout audio en une version robotique et synthétique de lui-même. Les voix deviennent monotones et métalliques, comme un robot ou un ordinateur qui parle. Les instruments gagnent une qualité synthétique et électronique.</div>
+
+<p><b>Hyper</b> — Enhancement multibande extrême. Paramètre : intensité.</p>
+<div class="audio-desc">🔊 Pousse l'audio dans un état agressivement amélioré, presque surréel. Les graves deviennent plus épais, les médiums plus présents, les aigus plus brillants. À haute intensité, le son devient presque inconfortablement vif et énergique.</div>
+
+<!-- ── Glitch ── -->
+<h3>⚡ Glitch</h3>
+
+<p><b>Stutter</b> — Répète de minuscules fragments rapidement. Paramètres : taille du stutter (ms), nombre de répétitions.</p>
+<div class="audio-desc">🔊 Découpe l'audio en petits morceaux et répète chacun — créant un effet "d-d-d-d-disque rayé". Des stutters courts (10-50ms) créent des patterns rythmiques mitraillette. Des stutters plus longs (100-200ms) créent des effets plus musicaux de type beat-repeat. Une technique glitch classique.</div>
+
+<p><b>Granular</b> — Décompose l'audio en grains minuscules et les réarrange. Paramètres : taille des grains, dispersion, randomisation de hauteur.</p>
+<div class="audio-desc">🔊 L'audio est brisé en particules microscopiques (grains) et réassemblé de nouvelles façons. Des petits grains avec beaucoup de dispersion créent une texture nuageuse et ambiante — le son original se dissout en une brume chatoyante. Des grains plus gros avec moins de dispersion créent une version "gelée" ou "cristallisée" du son.</div>
+
+<p><b>Shuffle</b> — Réordonne aléatoirement des blocs d'audio. Paramètres : taille des blocs, aléatoire.</p>
+<div class="audio-desc">🔊 Coupe l'audio en blocs et les réarrange au hasard — comme couper une cassette en morceaux et les recoller dans un ordre aléatoire. De petits blocs créent des patterns chaotiques et glitchy. De gros blocs créent une version surréaliste et mélangée de l'original.</div>
+
+<p><b>Buffer Freeze</b> — Capture et boucle un petit buffer. Paramètres : taille du buffer, position de gel.</p>
+<div class="audio-desc">🔊 Attrape un minuscule fragment d'audio et le boucle indéfiniment, créant un moment figé dans le temps. Des buffers courts (5-20ms) créent un bourdon tonal à partir de n'importe quel matériau. Des buffers plus longs (50-200ms) créent une boucle reconnaissable du contenu original.</div>
+
+<p><b>Datamosh</b> — Corrompt volontairement les données audio. Paramètres : quantité de corruption, taille de bloc.</p>
+<div class="audio-desc">🔊 Casse intentionnellement les données audio, créant des artefacts numériques, des glitchs, des pops et des textures inattendues. Un datamosh léger ajoute de subtiles imperfections numériques. Un datamosh lourd transforme l'audio en un chaos de bruit numérique et de restes fragmentés de l'original — de la vraie destruction audio.</div>
+
+<p><b>Vocal Chop</b> — Découpe l'audio en segments rythmiques. Paramètres : pattern de découpe, gate.</p>
+<div class="audio-desc">🔊 Tranche l'audio en morceaux rythmiques et applique du silence entre eux, créant un pattern haché et rythmique. Appliqué aux voix, ça crée l'effet classique "vocal choppé" utilisé en EDM et pop. Appliqué aux instruments, ça crée des effets de gating rythmique.</div>
+
+<p><b>Tape Glitch</b> — Simule une lecture de cassette endommagée. Paramètres : fréquence des glitchs, sévérité.</p>
+<div class="audio-desc">🔊 Imite un lecteur de cassettes défaillant — fluctuations de vitesse aléatoires, coupures (brefs silences) et oscillations. Des réglages légers ajoutent un caractère vintage. Des réglages lourds sonnent comme un lecteur qui mange votre cassette — l'audio bégaie, se déforme et disparaît brièvement de manière imprévisible.</div>
+
+<!-- ═══════════════════════════════════ -->
+<h2>📜 Historique des effets</h2>
+
+<p>Le panneau droit affiche chaque effet que vous avez appliqué, dans l'ordre. Chaque entrée montre le nom de l'effet, un indicateur coloré, et des contrôles activer/supprimer.</p>
+
+<p><b>Activer/Désactiver</b> — Cliquez sur l'icône œil de n'importe quel effet pour le désactiver temporairement sans le supprimer. L'audio est re-rendu en temps réel. Cela permet de comparer avant/après.</p>
+
+<p><b>Supprimer</b> — Cliquez sur l'icône poubelle pour supprimer définitivement un effet. L'audio est re-rendu sans lui.</p>
+
+<p><b>Annuler/Refaire</b> — <kbd>Ctrl+Z</kbd> annule le dernier effet. <kbd>Ctrl+Y</kbd> le rétablit. Disponible aussi via les boutons de la barre d'outils.</p>
+
+<!-- ═══════════════════════════════════ -->
+<h2>⭐ Favoris &amp; Presets</h2>
+
+<p><b>Favoris</b> — Cliquez sur l'étoile à côté d'un effet pour le marquer comme favori. Les favoris sont persistants entre les sessions.</p>
+
+<p><b>Presets</b> — Cliquez sur l'onglet "PR" dans le panneau d'effets pour passer en vue presets. Les presets sont des configurations sauvegardées de paramètres d'effets réapplicables instantanément.</p>
+
+<p>• <b>+ Preset</b> — Sauvegardez vos paramètres actuels comme nouveau preset.<br>
+• <b>Import</b> — Importez des presets depuis des fichiers.<br>
+• <b>Catalog</b> — Parcourez le catalogue de presets intégré.<br>
+• <b>⚙ Gérer</b> — Renommez, supprimez ou exportez vos presets.</p>
 
 <!-- ═══════════════════════════════════ -->
 <h2>⚙️ Paramètres</h2>
 
-<p>Les paramètres sont séparés en trois fenêtres distinctes dans le menu <b>Options</b> :</p>
+<p><b>Options &gt; Audio Devices</b> — Sélectionnez votre périphérique de sortie (haut-parleurs/casque) et d'entrée (micro). Cliquez Rafraîchir pour rescanner. Les périphériques aux noms dupliqués sont automatiquement fusionnés.</p>
 
-<p><b>Périphériques audio</b> — Choisissez votre sortie audio (haut-parleurs, casque, interface) et entrée (pour l'enregistrement). Le ★ marque le périphérique par défaut. Cliquez <b>Actualiser</b> pour re-scanner les périphériques après avoir branché quelque chose.</p>
+<p><b>Options &gt; Langue</b> — Basculez entre anglais et français. L'interface se met à jour instantanément.</p>
 
-<p><b>Langue</b> — Basculer entre Français et English.</p>
+<p><b>Options &gt; Thème</b> — Basculez entre thème sombre et clair.</p>
 
-<p><b>Thème</b> — Choisir entre le mode Sombre et Clair.</p>
+<p><b>Options &gt; Métronome</b> — Configurez le BPM (nombre éditable), le volume (avec pourcentage), et activez/désactivez.</p>
 
 <!-- ═══════════════════════════════════ -->
 <h2>⌨️ Raccourcis clavier</h2>
 
 <table>
-<tr><th>Touche</th><th>Action</th></tr>
-<tr><td><kbd>Ctrl+N</kbd></td><td>Nouveau projet</td></tr>
-<tr><td><kbd>Ctrl+O</kbd></td><td>Ouvrir un fichier audio</td></tr>
-<tr><td><kbd>Ctrl+S</kbd></td><td>Sauvegarder le projet</td></tr>
-<tr><td><kbd>Espace</kbd></td><td>Lecture / Stop</td></tr>
-<tr><td><kbd>Ctrl+Z</kbd></td><td>Annuler</td></tr>
-<tr><td><kbd>Ctrl+Y</kbd></td><td>Refaire</td></tr>
-<tr><td><kbd>M</kbd></td><td>Ajouter un marqueur</td></tr>
-<tr><td><kbd>Ctrl+←</kbd> / <kbd>Ctrl+→</kbd></td><td>Marqueur précédent / suivant</td></tr>
-<tr><td><kbd>Ctrl+A</kbd></td><td>Tout sélectionner</td></tr>
+<tr><th>Raccourci</th><th>Action</th></tr>
+<tr><td><kbd>Espace</kbd></td><td>Lecture / Pause</td></tr>
+<tr><td><kbd>Escape</kbd></td><td>Désélectionner</td></tr>
+<tr><td><kbd>Ctrl+Z</kbd></td><td>Annuler le dernier effet</td></tr>
+<tr><td><kbd>Ctrl+Y</kbd></td><td>Refaire le dernier effet</td></tr>
+<tr><td><kbd>M</kbd></td><td>Ajouter un marqueur à la position actuelle</td></tr>
+<tr><td><kbd>Ctrl+→</kbd></td><td>Sauter au marqueur suivant</td></tr>
+<tr><td><kbd>Ctrl+←</kbd></td><td>Sauter au marqueur précédent</td></tr>
 <tr><td><kbd>Suppr</kbd></td><td>Supprimer le clip sélectionné</td></tr>
-<tr><td><kbd>Échap</kbd></td><td>Désélectionner</td></tr>
-<tr><td>Molette souris</td><td>Zoom waveform &amp; timeline</td></tr>
+<tr><td>Molette (waveform)</td><td>Zoom waveform</td></tr>
+<tr><td>Molette (timeline)</td><td>Zoom timeline (indépendant)</td></tr>
 </table>
 
-<p style="margin-top: 36px; color: #636e72; font-size: 12px; text-align: center;">Glitch Maker v6.0 — <a href="https://github.com/Spiralyfox">github.com/Spiralyfox</a></p>
+<!-- ═══════════════════════════════════ -->
+
+<p style="margin-top: 36px; color: #636e72; font-size: 12px; text-align: center;">
+Glitch Maker v6.2 — Mattéo Dauriac (Spiralyfox)<br>
+<a href="https://github.com/Spiralyfox/GlitchMaker">github.com/Spiralyfox/GlitchMaker</a>
+</p>
 
 </body>
 </html>

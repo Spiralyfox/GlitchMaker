@@ -41,7 +41,7 @@
   "record.done": "Recording complete",
   "record.finish": "Use recording",
   "about.desc": "Creative audio destruction toolkit.\nGlitch effects, presets, timeline, multi-format support.\nMangle, transform and experiment with your audio.",
-  "about.by": "by Mattéo DAURIAC (Spiralyfox)",
+  "about.by": "by Mattéo Dauriac (Spiralyfox)",
   "status.ready": "Ready",
   "status.loaded": "Loaded: {f}",
   "status.project": "Project loaded: {f}",

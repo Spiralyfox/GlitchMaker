@@ -102,6 +102,7 @@ class MainWindow(QMainWindow):
         self._sig_playback_done.connect(self._on_playback_done_gui)
         self.playback.on_playback_finished = lambda: self._sig_playback_done.emit()
         self._unsaved = False
+        self._was_playing_before_drag = False
         self.preset_manager = PresetManager()
         self._active_worker = None
         self._last_params: dict[str, dict] = {}
@@ -163,6 +164,7 @@ class MainWindow(QMainWindow):
         # ── Left panel: effects ──
         left_panel = QWidget()
         left_panel.setFixedWidth(220)
+        left_panel.setStyleSheet(f"background: {COLORS['bg_panel']};")
         left_lo = QVBoxLayout(left_panel)
         left_lo.setContentsMargins(0, 0, 0, 0)
         left_lo.setSpacing(0)
@@ -417,7 +419,7 @@ class MainWindow(QMainWindow):
 
     def _connect(self):
         self.transport.play_clicked.connect(self._play)
-        self.transport.pause_clicked.connect(self._stop)
+        self.transport.pause_clicked.connect(self._pause)
         self.transport.stop_clicked.connect(self._stop)
         self.transport.volume_changed.connect(self.playback.set_volume)
         self.waveform.position_clicked.connect(self._seek)
@@ -535,35 +537,69 @@ class MainWindow(QMainWindow):
 
     def _open_metronome_dialog(self):
         from PyQt6.QtWidgets import QGroupBox
-        d = QDialog(self); d.setWindowTitle(t("metro.title")); d.setFixedSize(320, 250)
+        d = QDialog(self); d.setWindowTitle(t("metro.title")); d.setFixedSize(380, 300)
         d.setStyleSheet(f"QDialog {{ background: {COLORS['bg_medium']}; }}"
-                        f" QLabel {{ color: {COLORS['text']}; font-size: 11px; }}"
-                        f" QCheckBox {{ color: {COLORS['text']}; font-size: 11px; }}")
+                        f" QLabel {{ color: {COLORS['text']}; font-size: 12px; }}"
+                        f" QCheckBox {{ color: {COLORS['text']}; font-size: 12px; }}")
         lo = QVBoxLayout(d)
+        lo.setContentsMargins(24, 20, 24, 20)
+        lo.setSpacing(12)
+
         on_cb = QCheckBox(t("metro.enable")); on_cb.setChecked(self.playback.metronome_on)
         lo.addWidget(on_cb)
-        lo.addWidget(QLabel(f"BPM: {self.bpm_spin.value()}"))
+
+        # BPM row: label + editable spin
+        bpm_row = QHBoxLayout()
+        bpm_lbl = QLabel("BPM:")
+        bpm_lbl.setStyleSheet(f"color: {COLORS['text']}; font-size: 12px; font-weight: bold;")
+        bpm_row.addWidget(bpm_lbl)
+        bpm_spin = QSpinBox()
+        bpm_spin.setRange(20, 300)
+        bpm_spin.setValue(self.bpm_spin.value())
+        bpm_spin.setFixedSize(90, 30)
+        bpm_spin.setStyleSheet(
+            f"QSpinBox {{ background: {COLORS['bg_dark']}; color: {COLORS['text']};"
+            f" border: 1px solid {COLORS['border']}; border-radius: 4px;"
+            f" font-size: 12px; padding: 2px 6px; }}"
+            f"QSpinBox:focus {{ border-color: {COLORS['accent']}; }}")
+        bpm_row.addWidget(bpm_spin)
+        bpm_row.addStretch()
+        lo.addLayout(bpm_row)
+
+        # Volume group with slider + percentage
         grp = QGroupBox(t("metro.volume"))
         grp.setStyleSheet(f"QGroupBox {{ color: {COLORS['accent']}; border: 1px solid {COLORS['border']};"
-                          f" border-radius: 4px; margin-top: 8px; padding-top: 16px; }}"
+                          f" border-radius: 4px; margin-top: 8px; padding-top: 18px; font-size: 12px; }}"
                           f"QGroupBox::title {{ subcontrol-origin: margin; left: 10px; }}")
         gl = QVBoxLayout(grp)
+        vol_row = QHBoxLayout()
         vol_slider = QSlider(Qt.Orientation.Horizontal)
         vol_slider.setRange(0, 100); vol_slider.setValue(int(self.playback.metronome_vol * 100))
-        gl.addWidget(vol_slider)
+        vol_row.addWidget(vol_slider)
+        vol_pct = QLabel(f"{vol_slider.value()}%")
+        vol_pct.setFixedWidth(40)
+        vol_pct.setStyleSheet(f"color: {COLORS['text_dim']}; font-size: 11px;")
+        vol_slider.valueChanged.connect(lambda v: vol_pct.setText(f"{v}%"))
+        vol_row.addWidget(vol_pct)
+        gl.addLayout(vol_row)
         lo.addWidget(grp)
+
         lo.addStretch()
         row = QHBoxLayout()
-        btn_ok = QPushButton(t("dialog.apply")); btn_ok.setFixedHeight(30)
+        btn_ok = QPushButton(t("dialog.apply")); btn_ok.setFixedHeight(34)
         btn_ok.setStyleSheet(f"QPushButton {{ background: {COLORS['accent']}; color: white;"
-                             f" border: none; border-radius: 4px; font-weight: bold; padding: 0 20px; }}")
+                             f" border: none; border-radius: 5px; font-weight: bold;"
+                             f" font-size: 13px; padding: 0 24px; }}"
+                             f"QPushButton:hover {{ background: {COLORS['accent_hover']}; }}")
         btn_ok.clicked.connect(d.accept)
         row.addStretch(); row.addWidget(btn_ok)
         lo.addLayout(row)
         if d.exec() == d.DialogCode.Accepted:
             self.playback.metronome_vol = vol_slider.value() / 100.0
+            new_bpm = bpm_spin.value()
+            self.bpm_spin.setValue(new_bpm)
             if on_cb.isChecked() != self.playback.metronome_on:
-                self.playback.toggle_metronome(self.bpm_spin.value())
+                self.playback.toggle_metronome(new_bpm)
             self.btn_metro.setChecked(self.playback.metronome_on)
 
     # ══════ Playback ══════
@@ -571,8 +607,10 @@ class MainWindow(QMainWindow):
     def _toggle_play(self):
         if self.audio_data is None: return
         try:
-            if self.playback.is_playing: self._stop()
-            else: self._play()
+            if self.playback.is_playing:
+                self._pause()
+            else:
+                self._play()
         except Exception as ex:
             _log.error("Toggle play error: %s", ex)
 
@@ -580,7 +618,9 @@ class MainWindow(QMainWindow):
         if self.audio_data is None: return
         try:
             if self.playback.is_paused:
-                self.playback.resume(); return
+                self.playback.resume()
+                self.transport.set_playing(True)
+                return
             s, e = self._sel_range()
             if s is not None:
                 self.playback.play_selection(s, e)
@@ -597,6 +637,7 @@ class MainWindow(QMainWindow):
 
     def _pause(self):
         self.playback.pause()
+        self.transport.set_playing(False)
 
     def _stop(self):
         try:
@@ -632,11 +673,20 @@ class MainWindow(QMainWindow):
             t_str = format_time(sample / self.sample_rate)
             dur = format_time(get_duration(self.audio_data, self.sample_rate))
             self.transport.set_time(t_str, dur)
+            # If was playing before click, resume from new anchor
+            if getattr(self, '_was_playing_before_drag', False):
+                self._was_playing_before_drag = False
+                self.playback.play(start_pos=sample)
+                self.transport.set_playing(True)
         except Exception as ex:
             _log.error("Seek error: %s", ex)
 
     def _on_drag_start(self):
-        if self.playback.is_playing: self._stop()
+        if self.playback.is_playing:
+            self._was_playing_before_drag = True
+            self._pause()
+        else:
+            self._was_playing_before_drag = False
 
     def _seek_from_timeline(self, pos):
         if self.audio_data is None: return
@@ -662,6 +712,11 @@ class MainWindow(QMainWindow):
             e_samp = max(s_samp, min(int(e), total))
             if e_samp - s_samp < 64:
                 self.transport.set_selection_info("")
+                # If was playing, resume from click position
+                if getattr(self, '_was_playing_before_drag', False):
+                    self._was_playing_before_drag = False
+                    self.playback.play(start_pos=s_samp)
+                    self.transport.set_playing(True)
                 return
             self.waveform.set_selection(s_samp, e_samp)
             dur_s = (e_samp - s_samp) / self.sample_rate
@@ -673,11 +728,26 @@ class MainWindow(QMainWindow):
                     p = self._find_plugin(fid)
                     if p: names.append(p.get_name(get_language()))
                 self.toolbar_info.setText(f"★ {', '.join(names)}")
+            # If was playing before drag, resume in selection
+            if getattr(self, '_was_playing_before_drag', False):
+                self._was_playing_before_drag = False
+                self.playback.stop()
+                self.playback.play_selection(s_samp, e_samp)
+                self.transport.set_playing(True)
         except Exception as ex:
             _log.error("Selection error: %s", ex)
 
     def _on_playback_done_gui(self):
-        """Called on GUI thread when playback finishes (via signal)."""
+        """Called on GUI thread when playback finishes (via signal).
+        If no selection active, loop from beginning instead of stopping."""
+        s, e = self._sel_range()
+        if s is None and self.audio_data is not None:
+            # No selection → loop from start
+            self.playback.play(start_pos=0)
+            self.waveform.set_playhead(0)
+            self.timeline_w.set_playhead(0, self.sample_rate)
+            self.transport.set_playing(True)
+            return
         self.transport.set_playing(False)
         self._was_playing = False
 

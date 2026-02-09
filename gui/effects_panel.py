@@ -464,6 +464,7 @@ class EffectsPanel(QWidget):
     def _rebuild(self):
         """Reconstruit la liste des effets apres changement de langue."""
         container = QWidget()
+        container.setStyleSheet(f"background: {COLORS['bg_panel']};")
         cl = QVBoxLayout(container)
         cl.setContentsMargins(4, 4, 4, 4)
         cl.setSpacing(2)

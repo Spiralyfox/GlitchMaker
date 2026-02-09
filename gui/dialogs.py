@@ -109,7 +109,7 @@ class AboutDialog(QDialog):
         d.setAlignment(Qt.AlignmentFlag.AlignCenter); d.setWordWrap(True); lo.addWidget(d)
 
         lo.addSpacing(6)
-        gh_url = "https://github.com/Spiralyfox/Glitch-Maker"
+        gh_url = "https://github.com/Spiralyfox/GlitchMaker"
         gh = QLabel(f'<a href="{gh_url}" style="color: {COLORS["accent"]};">{gh_url}</a>')
         gh.setOpenExternalLinks(True)
         gh.setAlignment(Qt.AlignmentFlag.AlignCenter); gh.setWordWrap(True)

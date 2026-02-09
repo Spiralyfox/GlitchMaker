@@ -1,6 +1,69 @@
 # Glitch Maker — Project Status
 
-## v6.0 — Menu Separator, Header Colors Fixed (current)
+## v6.2 — Play/Pause Fix, Loop, Docs Rewrite, Credits (current)
+
+### Play/Pause Button
+- `transport.pause_clicked` now connects to `_pause()` instead of `_stop()`
+- `_toggle_play()` (Space bar): calls `_pause()` when playing, `_play()` when stopped
+- `_pause()`: calls `playback.pause()` + `transport.set_playing(False)` — playhead stays in place
+- `_play()`: when `is_paused`, calls `resume()` + `transport.set_playing(True)` — resumes from paused position
+- Behavior: Play→Pause freezes position, Play resumes from there. Stop returns to anchor/selection/start.
+
+### Automatic Loop
+- `_on_playback_done_gui()`: if no selection active, calls `play(start_pos=0)` to restart from beginning
+- If selection exists, normal stop behavior (selection already loops via playback engine)
+
+### Effects Panel Background
+- `left_panel` wrapper in main_window: added `setStyleSheet(f"background: {bg_panel}")` 
+- Container in `_rebuild()`: added `setStyleSheet(f"background: {bg_panel}")` on container widget
+- Ensures effects list area matches effect_history background color
+
+### Documentation Rewrite
+- README.md: complete rewrite — FR then EN presentation, all features described, no version history
+- manual_en.html: comprehensive manual with all 27 effects documented, audio descriptions, usage instructions
+- manual_fr.html: same in French, full translation
+- All credits corrected: Mattéo Dauriac (Spiralyfox)
+- GitHub project URL fixed: github.com/Spiralyfox/GlitchMaker
+
+### Credits Fix
+- `gui/dialogs.py`: GitHub URL `Glitch-Maker` → `GlitchMaker`
+- `lang/en.json` + `lang/fr.json`: "DAURIAC" → "Dauriac"
+- README.md + PROJECT_STATUS.md: "Théo" → "Mattéo Dauriac"
+
+---
+
+## v6.1 — Audio Dialog, Metronome, Smart Selection
+
+### Audio Settings Dialog
+- Increased size: 480×360 (was 460×300)
+- Margins: 28px sides, 24px top/bottom (was 24/20)
+- Spacing between combos: 20px (was 12px)
+- Spacing before buttons: 16px + stretch (was just stretch)
+- **Device deduplication**: `seen_out`/`seen_in` dicts merge duplicate device names — keeps the first occurrence but prefers the default device index. Sorted alphabetically for cleaner list.
+
+### Metronome Dialog Redesigned
+- Size: 380×300 (was 320×250)
+- Added `QSpinBox` for editable BPM input (range 20-300), syncs with toolbar BPM spin
+- Volume slider now has live `QLabel` showing `{value}%` updated via `valueChanged`
+- Styled consistently with dark theme
+- Apply button: bigger (34px), rounded, hover effect
+
+### Smart Selection During Playback
+- `_was_playing_before_drag` flag added to `__init__` (default `False`)
+- `_on_drag_start()`: if `is_playing`, sets flag `True` and calls `_pause()` (was `_stop()`)
+- `_on_sel()`: if flag is `True`, calls `play_selection(s, e)` to resume in selection zone
+- `_on_sel()` tiny selection case (< 64 samples): if flag, calls `play(start_pos=s_samp)`
+- `_seek()` (position_clicked): if flag, calls `play(start_pos=sample)` to resume from click
+
+### Documentation
+- README.md: v6.1 changelog (bilingual), v6.0 collapsed
+- manual_en.html / manual_fr.html: Smart selection paragraph, metronome settings updated, footer v6.1
+- PROJECT_STATUS.md: this entry
+- APP_VERSION: "6.1"
+
+---
+
+## v6.0 — Menu Separator, Header Colors Fixed
 
 ### Menu Bar Separator
 - Added `border-bottom: 1px solid border` to `QMenuBar` stylesheet in `setStyleSheet()`
@@ -391,4 +454,4 @@ Six methods/properties referenced by main_window but never implemented in Playba
 ---
 
 **Tech stack:** Python 3.10+, PyQt6, numpy, soundfile, scipy, sounddevice  
-**Author:** Théo (Spiralyfox) — https://github.com/Spiralyfox
+**Author:** Mattéo Dauriac (Spiralyfox) — https://github.com/Spiralyfox

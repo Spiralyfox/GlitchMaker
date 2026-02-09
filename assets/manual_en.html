@@ -1,296 +1,288 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="UTF-8">
 <title>Glitch Maker — User Manual</title>
 <style>
-  body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: #e0e0e0;
-         max-width: 860px; margin: 0 auto; padding: 24px 32px; line-height: 1.7; }
-  h1 { color: #6c5ce7; border-bottom: 2px solid #6c5ce7; padding-bottom: 8px; font-size: 26px; }
-  h2 { color: #a29bfe; margin-top: 36px; font-size: 18px; }
-  h3 { color: #dfe6e9; margin-top: 20px; font-size: 14px; }
-  code { background: #16213e; padding: 2px 6px; border-radius: 3px; font-size: 13px; }
-  kbd { background: #0f3460; padding: 2px 8px; border-radius: 4px; border: 1px solid #533483; font-size: 12px; }
-  .tip { background: #6c5ce722; border-left: 3px solid #6c5ce7; padding: 8px 14px; margin: 14px 0; border-radius: 4px; }
-  .listen { background: #e17055aa; border-left: 3px solid #e17055; padding: 6px 14px; margin: 10px 0; border-radius: 4px; font-style: italic; font-size: 13px; }
-  .shortcut { display: inline-block; background: #0f3460; padding: 2px 8px; border-radius: 4px; border: 1px solid #533483; font-size: 11px; margin: 1px 2px; }
-  a { color: #6c5ce7; }
-  table { border-collapse: collapse; width: 100%; margin: 10px 0; }
-  th, td { text-align: left; padding: 6px 12px; border-bottom: 1px solid #2d3436; font-size: 13px; }
-  th { color: #a29bfe; font-size: 12px; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0d0d1a; color: #e0e0e0; max-width: 820px; margin: 0 auto; padding: 24px; line-height: 1.7; }
+h1 { color: #7c5cfc; font-size: 28px; border-bottom: 2px solid #2a2a4a; padding-bottom: 10px; }
+h2 { color: #7c5cfc; font-size: 20px; margin-top: 36px; border-bottom: 1px solid #2a2a4a; padding-bottom: 6px; }
+h3 { color: #a78bfa; font-size: 15px; margin-top: 24px; }
+p { margin: 8px 0; }
+b { color: #c0c0e0; }
+a { color: #7c5cfc; }
+code { background: #1a1a30; padding: 2px 6px; border-radius: 3px; font-size: 13px; }
+kbd { background: #252545; border: 1px solid #3a3a5a; border-radius: 4px; padding: 2px 7px; font-size: 12px; color: #e0e0e0; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+th, td { border: 1px solid #2a2a4a; padding: 8px 12px; text-align: left; font-size: 13px; }
+th { background: #1a1a30; color: #a78bfa; }
+.tip { background: #1a1a30; border-left: 3px solid #7c5cfc; padding: 10px 14px; margin: 12px 0; border-radius: 0 6px 6px 0; font-size: 13px; }
+.audio-desc { background: #151528; border-left: 3px solid #f59e0b; padding: 8px 14px; margin: 8px 0; border-radius: 0 6px 6px 0; font-size: 13px; font-style: italic; color: #d4d4aa; }
 </style>
 </head>
 <body>
 
 <h1>🎵 Glitch Maker — User Manual</h1>
 
-<p>Glitch Maker is an audio effects workstation designed for creative sound design, glitch art, and vocal processing. It lets you stack, reorder, and toggle effects on any audio file without ever losing the original — everything is non-destructive.</p>
+<p>Glitch Maker is a creative audio effects workstation for sound design, glitch art and musical experimentation. This manual covers every feature of the software: what it does, how to use it, and what it sounds like.</p>
 
 <!-- ═══════════════════════════════════ -->
-<h2>📂 Opening &amp; Managing Files</h2>
+<h2>🖥️ Interface Overview</h2>
 
-<p><b>Open a file:</b> Use <kbd>Ctrl+O</kbd> or <b>File &gt; Open</b>. Supported formats: WAV, MP3, FLAC, OGG. Your audio appears as a clip on the timeline with its waveform drawn in the center view.</p>
+<p>The interface is divided into three main columns:</p>
 
-<p><b>Import additional files:</b> Open more files to add them as new clips on the timeline. Each clip gets a distinct color so you can tell them apart.</p>
+<p><b>Left panel — Effects</b>: Lists all 27 available effects organized by category. Use the search bar to filter, click an effect to apply it. Star your favorites for quick access. Toggle between effects (FX) and presets (PR) views.</p>
 
-<p><b>New project:</b> <kbd>Ctrl+N</kbd> clears everything. If you have unsaved changes, you'll be asked to save first.</p>
+<p><b>Center — Waveform &amp; Timeline</b>: The main workspace. The top shows the audio waveform where you can select regions, place markers, and see the playhead. Below it is the timeline showing clips as colored blocks. Between them is the transport bar (Play/Pause/Stop, time display, volume). A real-time spectrum analyzer sits at the bottom-right of the waveform area.</p>
 
-<p><b>Save project:</b> <kbd>Ctrl+S</kbd> saves a <code>.gspi</code> project file containing your audio, all your effects, and your full undo history. Reopen it later to pick up exactly where you left off.</p>
-
-<p><b>Export:</b> <b>File &gt; Export</b> renders your final audio to WAV, MP3, or FLAC. You can also export individual clips as separate files (stems export).</p>
+<p><b>Right panel — Effect History</b>: Every effect you apply appears here as a card. You can toggle each effect on/off (eye icon), delete it (trash icon), or use Ctrl+Z/Ctrl+Y to undo/redo. Effects are applied in order from top to bottom.</p>
 
 <!-- ═══════════════════════════════════ -->
-<h2>🎚️ The Interface</h2>
+<h2>📂 Loading &amp; Saving Audio</h2>
 
-<p>The window is divided into three areas:</p>
+<p><b>File &gt; Open</b> (or drag &amp; drop) — Load MP3, WAV, FLAC, OGG, or any format supported by FFmpeg. The waveform and timeline update immediately.</p>
 
-<p><b>Left panel</b> — The effects browser and presets. Browse effects by clicking on them to apply them to your audio.</p>
+<p><b>File &gt; Save / Save As</b> — Export the processed audio. Choose WAV for lossless quality or MP3/FLAC/OGG for compressed formats. The entire effect chain is baked into the output.</p>
 
-<p><b>Center</b> — The waveform display (top) and the timeline (bottom). The waveform shows your full audio with zoom support (mouse wheel). The timeline shows your individual clips and lets you rearrange them. Each has its own independent zoom — scroll the mouse wheel on either to zoom in/out separately.</p>
+<p><b>File &gt; Record</b> — Record audio directly from your input device. A recording dialog appears with level metering. Press Stop to finish and the recorded audio loads into the workspace.</p>
 
-<p><b>Right panel</b> — The effect history. Every effect you've applied appears here with its timestamp, separated by thin lines. You can toggle or delete any effect at any time.</p>
-
-<p>Between the waveform and timeline you'll find the <b>transport bar</b>: Play, Pause, Stop, and the current time display. When zoomed in, a <b>minimap</b> appears above the waveform — click and drag it to scroll through the waveform. The timeline has its own scrollbar when zoomed.</p>
+<div class="tip">💡 FFmpeg is downloaded automatically on first launch if it's not found on your system. This enables MP3, FLAC and OGG support.</div>
 
 <!-- ═══════════════════════════════════ -->
-<h2>🔊 Playback</h2>
+<h2>▶️ Playback &amp; Transport</h2>
 
-<p>Press <kbd>Space</kbd> to play/stop. The <b style="color:#22c55e">green line</b> (playhead) moves across the waveform and timeline as audio plays.</p>
+<p>The transport bar at the bottom of the center panel controls playback:</p>
 
-<p><b>Click on the waveform</b> to place a <b style="color:#3b82f6">blue anchor</b> — playback starts from there. When you press Stop, the position returns to the blue anchor. The anchor stays synced between the waveform and timeline — drag it in either to reposition. Click and drag to <b>select a region</b> — pressing play will loop that selection.</p>
+<p><b>PLAY / PAUSE button</b> — Click to start playback. While playing, the button changes to PAUSE. Clicking PAUSE freezes playback at the current position. Pressing Play again (or <kbd>Space</kbd>) resumes from where you paused. This is useful for listening carefully to a specific moment.</p>
 
-<p><b>Click on the timeline</b> to jump to any position. Click on a clip to select it (highlighted with a colored border).</p>
+<p><b>STOP button</b> — Stops playback and returns the playhead to its starting position: the blue anchor if one is set, the start of the selection if one exists, or the very beginning of the file.</p>
 
-<div class="tip">💡 The audio output uses your system's default device. If you plug in headphones after launching, go to <b>Options &gt; Audio Devices</b> and click <b>Refresh</b> to detect the new device.</div>
+<p><b>Automatic looping</b> — When there is no red selection and playback reaches the end of the file, it loops back to the beginning automatically instead of stopping. If a selection exists, playback loops within that selection.</p>
 
-<!-- ═══════════════════════════════════ -->
-<h2>🎨 Applying Effects</h2>
+<p><b>Volume slider</b> — Adjusts output volume from 0% to 100%. The percentage is displayed next to the slider.</p>
 
-<p>This is the core of Glitch Maker. Here's the workflow:</p>
+<p><b>Time display</b> — Shows current position / total duration in MM:SS.ms format.</p>
 
-<p><b>1.</b> Optionally <b>select a region</b> on the waveform (click + drag). If you don't select anything, the effect applies to the entire audio.<br>
-<b>2.</b> Click an <b>effect name</b> in the left panel.<br>
-<b>3.</b> A dialog opens with sliders and controls. Adjust the parameters.<br>
-<b>4.</b> Hit <b>Preview</b> to hear a 5-second sample of the result.<br>
-<b>5.</b> Hit <b>Apply</b> to commit the effect.</p>
-
-<p>The effect appears in the <b>effect history</b> panel on the right. Your original audio is never modified — effects are re-rendered on top of the original each time.</p>
-
-<h3>Managing applied effects</h3>
-<p><b>●</b> Toggle — Click to enable/disable an effect without removing it. The audio re-renders instantly.<br>
-<b>✕</b> Delete — Remove the effect permanently.</p>
+<p><b>Selection info</b> — When a region is selected, the duration of the selection is shown (e.g. "Sel: 00:01.25").</p>
 
 <!-- ═══════════════════════════════════ -->
-<h2>🔧 Effects Reference</h2>
+<h2>🎯 Waveform &amp; Selection</h2>
 
-<h3>Bitcrusher</h3>
-<p>Reduces the audio's bit depth and sample rate, creating a retro, crunchy, lo-fi digital sound — like old video game consoles or cheap samplers.</p>
-<p><b>Bit Depth</b> — Lower = more distorted. At 4 bits, audio sounds like a buzzy square wave. <b>Downsample</b> — Higher values add aliasing artifacts and a "stepped" texture.</p>
-<div class="listen">🔈 Imagine a vocal recorded through a Game Boy — metallic, grainy, with staircase-like steps in the waveform.</div>
+<p><b>Blue anchor</b> — Click anywhere on the waveform to place a <b style="color:#3b82f6">blue anchor line</b>. Playback starts from there. When you press Stop, the playhead returns to the anchor. Think of it as a "start from here" bookmark.</p>
 
-<h3>Buffer Freeze</h3>
-<p>Captures a tiny slice of audio and repeats it in a stuttering loop, like a CD skipping or a frozen glitch moment.</p>
-<p><b>Buffer size (ms)</b> — How long the frozen slice is. Short (10-50ms) = buzzy tone. Long (100-500ms) = recognizable repeated fragment.</p>
-<div class="listen">🔈 A singer holds a note, then suddenly the same 30ms fragment plays over and over — a rapid, robotic stutter that sounds like broken digital playback.</div>
+<p><b>Red selection</b> — Click and drag on the waveform to select a region (shown in red). Effects will only apply to the selected zone. If no selection is made, effects apply to the entire audio.</p>
 
-<h3>Chorus</h3>
-<p>Duplicates the audio with slight pitch and timing variations, simulating the sound of multiple instruments or voices playing together.</p>
-<p><b>Depth</b> — How much the copies are detuned. <b>Rate</b> — How fast the detuning oscillates. <b>Voices</b> — Number of copies. <b>Mix</b> — Wet/dry balance.</p>
-<div class="listen">🔈 A guitar line becomes wider and shimmering, like two guitarists playing the same part with slight natural differences.</div>
+<p><b>Smart selection during playback</b> — If audio is already playing and you start dragging to create a selection, playback automatically pauses. When you release the mouse, playback resumes inside the newly selected zone. A simple click (without dragging) repositions the anchor and resumes from there.</p>
 
-<h3>Datamosh</h3>
-<p>Rearranges raw audio data in blocks, creating digital corruption artifacts — the audio equivalent of video datamoshing.</p>
-<p><b>Block Size</b> — Size of data chunks being scrambled. <b>Chaos</b> — How much randomness is introduced.</p>
-<div class="listen">🔈 A clean vocal suddenly has bursts of garbled noise, micro-silences, and fragments playing in the wrong order — like a corrupted file.</div>
+<p><b>Right-click menu</b> — Right-click inside a selection to access cut options:</p>
+<p>• <b>Cut — Replace with silence</b>: the selected region becomes silent. The clip splits into 3 parts (before, silence, after).<br>
+• <b>Cut — Delete &amp; splice</b>: the selected region is removed and the remaining parts are joined. The audio becomes shorter.</p>
 
-<h3>Delay</h3>
-<p>Adds echoes of the original sound, repeating after a set time.</p>
-<p><b>Delay (ms)</b> — Time between echoes. 100-300ms = slapback. 500ms+ = distinct echoes. <b>Feedback</b> — How many times the echo repeats (higher = longer tail). <b>Mix</b> — Balance between dry and echoed signal.</p>
-<div class="listen">🔈 You say "hello" and hear "hello... hello... hello..." fading away, like shouting in a canyon.</div>
-
-<h3>Distortion</h3>
-<p>Overdrives the audio signal, adding harmonic overtones and grit. Multiple modes available.</p>
-<p><b>Drive</b> — Intensity of the distortion. <b>Tone</b> — Brightness of the distorted sound. <b>Mode</b> — Type of clipping curve (hard, soft, foldback).</p>
-<div class="listen">🔈 A clean vocal becomes aggressive and crunchy, like singing through a broken guitar amplifier turned up to maximum.</div>
-
-<h3>Filter</h3>
-<p>Removes frequencies above or below a cutoff point, shaping the tonal character.</p>
-<p><b>Cutoff (Hz)</b> — The frequency threshold. <b>Type</b> — Low-pass (removes highs, makes it muffled), high-pass (removes lows, makes it thin), band-pass (isolates a frequency band). <b>Resonance</b> — Boosts frequencies near the cutoff, adding a sharp peak.</p>
-<div class="listen">🔈 Low-pass at 500Hz: a vocal sounds like it's coming through a wall — muffled and distant. High-pass at 2kHz: only the brightness and sibilance remain.</div>
-
-<h3>Granular</h3>
-<p>Chops audio into tiny "grains" (5-200ms each), then scatters and layers them. Creates textures from clouds of sound fragments.</p>
-<p><b>Grain size (ms)</b> — Length of each grain. <b>Density</b> — How many grains overlap. <b>Chaos</b> — Randomness of grain positions and timing.</p>
-<div class="listen">🔈 A piano chord dissolves into a shimmering cloud of tiny fragments — like the sound is being sandblasted into particles that float and overlap.</div>
-
-<h3>OTT (Over The Top)</h3>
-<p>Extreme multiband compression that makes everything louder and punchier — a signature sound in EDM and hyperpop production.</p>
-<p><b>Depth</b> — How aggressive the compression is. At 100%, quiet parts become as loud as peaks.</p>
-<div class="listen">🔈 A dynamic vocal becomes unnaturally consistent in volume — every whisper is as loud as every shout, with an "in your face" presence.</div>
-
-<h3>Pan / Stereo</h3>
-<p>Controls the left-right positioning of the audio in the stereo field.</p>
-<p><b>Pan</b> — Moves the audio between left (-100%) and right (+100%). Center = 0. <b>Mono</b> — Collapses stereo to mono (useful before other effects).</p>
-<div class="listen">🔈 A vocal that was centered now comes entirely from the left speaker — or sweeps slowly from left to right.</div>
-
-<h3>Phaser</h3>
-<p>Creates a sweeping, swirling frequency effect by combining the signal with a phase-shifted copy.</p>
-<p><b>Rate</b> — Speed of the sweep. <b>Depth</b> — Intensity. <b>Stages</b> — Number of phase-shift stages (more = deeper effect). <b>Mix</b> — Wet/dry.</p>
-<div class="listen">🔈 A pad sound develops a slow, watery "whoosh" that sweeps up and down — like listening through a rotating fan.</div>
-
-<h3>Pitch Shift</h3>
-<p>Moves the pitch up or down without changing the speed.</p>
-<p><b>Semitones</b> — How far to shift. +12 = one octave up. -12 = one octave down. Small values (±1-3) are subtle; large values create alien or chipmunk effects.</p>
-<div class="listen">🔈 At +5 semitones, a male voice sounds like a bright, slightly unnatural higher voice. At -7, it becomes a deep, ominous rumble.</div>
-
-<h3>Reverse</h3>
-<p>Plays the audio backwards. No parameters — it just flips the entire selection.</p>
-<div class="listen">🔈 A spoken word becomes an eerie, alien utterance. Cymbals get a slow "swell" instead of a sharp attack. Great for atmospheric textures.</div>
-
-<h3>Ring Mod (Ring Modulation)</h3>
-<p>Multiplies the audio by a sine wave, creating metallic, bell-like or robotic overtones.</p>
-<p><b>Frequency</b> — The modulating frequency. Low (20-100Hz) = tremolo-like. Medium (200-1000Hz) = robotic. High (1000+Hz) = metallic bells. <b>Mix</b> — Wet/dry.</p>
-<div class="listen">🔈 A voice becomes robotic and metallic, like a Dalek — each word produces strange harmonic sidebands that make it sound inhuman.</div>
-
-<h3>Saturation</h3>
-<p>Adds warm harmonic distortion, from subtle analog warmth to heavy overdrive.</p>
-<p><b>Type</b> — Saturation curve (tape, tube, etc.). <b>Drive</b> — Intensity.</p>
-<div class="listen">🔈 At low drive, a vocal gains subtle warmth and presence — like being recorded to analog tape. At high drive, it becomes thick and fuzzy.</div>
-
-<h3>Shuffle</h3>
-<p>Chops the audio into equal slices and rearranges them randomly — like cutting a tape into pieces and reassembling blindly.</p>
-<p><b>Num Slices</b> — How many pieces to cut. More slices = more chaotic.</p>
-<div class="listen">🔈 A 4-bar melody gets cut into 16 pieces and randomly rearranged — familiar fragments appear in unexpected order, creating controlled chaos.</div>
-
-<h3>Stutter</h3>
-<p>Rapidly repeats small sections of audio, creating rhythmic glitch patterns.</p>
-<p><b>Repeats</b> — Number of repetitions per stutter. <b>Decay</b> — Volume fade across repeats. <b>Mode</b> — Pattern of the stutter (regular, accelerating, random).</p>
-<div class="listen">🔈 A vocal goes "I lo-lo-lo-lo-love" — the same tiny fragment machine-guns rapidly before the audio continues normally.</div>
-
-<h3>Tape Stop</h3>
-<p>Simulates a tape deck being stopped — the audio slows down and drops in pitch until it stops.</p>
-<p><b>Duration (ms)</b> — How long the slowdown takes. Short (100ms) = a quick "woomp". Long (2000ms) = a dramatic, drawn-out spiral downward.</p>
-<div class="listen">🔈 The music suddenly warps downward in pitch and slows to a halt — like someone pulled the plug on a turntable.</div>
-
-<h3>Time Stretch</h3>
-<p>Changes the speed of the audio without changing the pitch (or vice versa).</p>
-<p><b>Factor</b> — Values below 1.0 speed up, above 1.0 slow down. At 0.5, audio plays at double speed. At 2.0, it takes twice as long.</p>
-<div class="listen">🔈 At 1.5×, a fast rap verse slows down to a dreamy, stretched pace — same pitch, but with an ethereal, spacious quality.</div>
-
-<h3>Tremolo</h3>
-<p>Modulates the volume up and down rhythmically, creating a pulsing or wobbling effect.</p>
-<p><b>Rate (Hz)</b> — Speed of the pulsing. <b>Depth</b> — How much the volume varies. <b>Shape</b> — Wave shape (sine = smooth, square = choppy on/off).</p>
-<div class="listen">🔈 A guitar chord pulses in and out rhythmically — at fast rates it sounds like a helicopter, at slow rates like gentle breathing.</div>
-
-<h3>Vinyl</h3>
-<p>Adds vinyl record imperfections: crackle, hiss, warble, and surface noise.</p>
-<p><b>Amount</b> — Intensity. Low = subtle warmth and occasional pops. High = heavily degraded, like a very worn record.</p>
-<div class="listen">🔈 Your clean digital audio gains the warm character of an old vinyl record — soft crackles and pops throughout, with a slightly wobbly pitch.</div>
-
-<h3>Volume</h3>
-<p>Simple gain control — makes the audio louder or quieter.</p>
-<p><b>Gain (%)</b> — Percentage of original volume. 200% = twice as loud. 50% = half.</p>
+<p><b>Waveform zoom</b> — Scroll the mouse wheel over the waveform to zoom in/out horizontally. A minimap appears above the waveform showing your current viewport. Click and drag the minimap to scroll through the zoomed waveform.</p>
 
 <!-- ═══════════════════════════════════ -->
-<h2>🎤 Voice Presets</h2>
+<h2>🎼 Timeline</h2>
 
-<p>Click the <b>PR</b> tab in the left panel to access 20 ready-made vocal presets. Each preset is a pre-configured combination of effects designed for a specific sound. Just select your audio and click a preset name — it applies everything at once.</p>
+<p>The timeline sits below the waveform and displays your audio as colored clip blocks. Each time you apply an effect to a selection, a new clip is created showing exactly which portion was affected.</p>
 
-<table>
-<tr><th>Preset</th><th>What it sounds like</th></tr>
-<tr><td>Hard Autotune (T-Pain)</td><td>Robotic, perfectly-pitched vocal with sharp pitch snapping</td></tr>
-<tr><td>Soft Autotune</td><td>Gentle pitch correction — natural but polished</td></tr>
-<tr><td>Autotune + Reverb Wash</td><td>Tuned vocal swimming in spacious reverb</td></tr>
-<tr><td>Hyperpop Vocal</td><td>Bright, hyper-processed, compressed and pitched up</td></tr>
-<tr><td>Hyperpop Lite</td><td>Subtler version of the above</td></tr>
-<tr><td>Digital Angel</td><td>Ethereal, high-pitched, reverb-drenched — angelic and synthetic</td></tr>
-<tr><td>Digicore Grit</td><td>Raw, distorted, digital-sounding vocal</td></tr>
-<tr><td>Emocore Vocal</td><td>Emotional, compressed vocal with reverb tail</td></tr>
-<tr><td>Robot Voice</td><td>Metallic, monotone, mechanical speech</td></tr>
-<tr><td>Vocoder Robot</td><td>Classic vocoder effect — buzzy, synthetic speech</td></tr>
-<tr><td>Nightcore</td><td>Pitched up and sped up — the signature anime-remix sound</td></tr>
-<tr><td>Chipmunk</td><td>Very high pitch shift — squeaky cartoon character voice</td></tr>
-<tr><td>Demon Voice</td><td>Deep, dark, pitched down with distortion</td></tr>
-<tr><td>Witch House</td><td>Dark, slowed down, heavily reverbed and filtered</td></tr>
-<tr><td>Lo-fi Vocal</td><td>Warm, muffled, vinyl-like degradation</td></tr>
-<tr><td>Phonk Vocal</td><td>Gritty, dark, distorted with lo-fi character</td></tr>
-<tr><td>Alien Voice</td><td>Strange, otherworldly, ring-modulated and shifted</td></tr>
-<tr><td>Broken Radio</td><td>Band-passed, crackly, like a damaged AM radio</td></tr>
-<tr><td>Vaporwave</td><td>Slowed, pitched down, dreamy and nostalgic</td></tr>
-<tr><td>Glitchcore Vocal</td><td>Stuttered, shuffled, bitcrushed — maximum chaos</td></tr>
-</table>
+<p><b>Click on the timeline</b> to jump to any position. Click on a clip to select it (highlighted border).</p>
 
-<!-- ═══════════════════════════════════ -->
-<h2>🎬 Timeline &amp; Clips</h2>
+<p><b>Timeline zoom</b> — Scroll the mouse wheel over the timeline to zoom in/out independently from the waveform. A horizontal scrollbar appears below the timeline when zoomed in.</p>
 
-<p>The timeline at the bottom shows all your audio clips laid out in sequence. Each clip is a colored block showing its waveform and duration.</p>
-
-<p><b>Select a clip</b> — Click on it. The waveform view highlights the corresponding region.<br>
-<b>Reorder</b> — Drag a clip left or right to change its position in the sequence.<br>
-<b>Zoom</b> — Use the mouse wheel on the timeline to zoom in/out independently from the waveform. A scrollbar appears below the timeline when zoomed. A zoom indicator appears in the bottom-right corner.<br>
-<b>Right-click a clip</b> for these operations:</p>
-
-<p><b>Split</b> — Cuts the clip at the cursor into two clips with distinct colors.<br>
-<b>Duplicate</b> — Creates an identical copy right after the original.<br>
-<b>Delete</b> — Removes the clip (also works with the <kbd>Delete</kbd> key).<br>
-<b>Fade In / Fade Out</b> — Applies a gradual volume increase or decrease.</p>
-
-<h3>✂️ Cut selection</h3>
-<p>Select a region on the waveform (click + drag), then <b>right-click inside the red selection</b> to access cut options:</p>
-<p><b>Cut — Replace with silence</b> — The selected region becomes silent. The clip is split into 3 parts (before, silence, after).<br>
-<b>Cut — Remove &amp; splice</b> — The selected region is deleted and the remaining parts are joined. The clip becomes shorter.</p>
-<p>Each resulting clip gets a unique color so you can tell them apart.</p>
-
-<div class="tip">💡 Structural clip operations (split, cut, duplicate, delete, reorder) reset your effects to keep things consistent. Fades preserve your existing effects.</div>
-
-<!-- ═══════════════════════════════════ -->
-<h2>↩️ Undo &amp; Redo</h2>
-
-<p><kbd>Ctrl+Z</kbd> to undo, <kbd>Ctrl+Y</kbd> to redo. Up to 20 levels. Every action (applying an effect, splitting a clip, reordering, etc.) is recorded. Undo works by re-rendering from your original audio, so it's always accurate.</p>
-
-<!-- ═══════════════════════════════════ -->
-<h2>🎵 Metronome &amp; Beat Grid</h2>
-
-<p>Click the <b>BPM</b> button in the toolbar to enable the metronome. It plays click sounds in sync with the audio at the specified tempo. The beat grid draws vertical lines on the waveform aligned to beats and bars, helping you time your edits to the music.</p>
-
-<p>Open the metronome settings (small gear icon) to adjust tempo, volume, beats per bar, and subdivisions.</p>
+<p><b>Time markers</b> — The timeline header shows time markers (00:00.00, 00:00.50, etc.) that scale with zoom level.</p>
 
 <!-- ═══════════════════════════════════ -->
 <h2>📌 Markers</h2>
 
-<p>Press <kbd>M</kbd> during playback to drop a marker at the current position. Markers appear as colored flags on the waveform. Use <kbd>Ctrl+→</kbd> and <kbd>Ctrl+←</kbd> to jump between markers. Useful for marking sections (verse, chorus, drop) for quick navigation.</p>
+<p>Press <kbd>M</kbd> to add a marker at the current playhead position. Markers appear as vertical lines on the waveform and are useful for bookmarking important moments.</p>
+
+<p><b>Navigate</b>: <kbd>Ctrl+→</kbd> jumps to the next marker, <kbd>Ctrl+←</kbd> to the previous one.</p>
+
+<p><b>Delete</b>: Right-click on the waveform near a marker to access marker options.</p>
+
+<!-- ═══════════════════════════════════ -->
+<h2>🎵 Metronome &amp; Beat Grid</h2>
+
+<p>Click the <b>Metronome</b> button in the toolbar to toggle it on/off. The metronome plays click sounds synchronized with the audio at the specified BPM. The beat grid draws vertical lines on the waveform aligned to beats, helping you time your edits musically.</p>
+
+<p>Open <b>Options &gt; Metronome</b> to configure:</p>
+<p>• <b>Enable/Disable</b> — Toggle the metronome click sound.<br>
+• <b>BPM</b> — Type a number directly (20–300) to set the tempo.<br>
+• <b>Volume</b> — Slider with live percentage display to control metronome loudness.</p>
+
+<div class="audio-desc">🔊 The metronome produces a short, sharp click on each beat. At 120 BPM, you'll hear 2 clicks per second. The beat grid on the waveform helps you visually align your selections to musical beats.</div>
+
+<!-- ═══════════════════════════════════ -->
+<h2>🔊 Spectrum Analyzer</h2>
+
+<p>The real-time spectrum analyzer is displayed in the bottom-right area during playback. It shows the frequency content of the audio as a bar graph, from low frequencies (bass) on the left to high frequencies (treble) on the right. This helps you visualize the sonic impact of your effects.</p>
+
+<!-- ═══════════════════════════════════ -->
+<h2>🎛️ Effects — Complete Reference</h2>
+
+<p>To apply an effect: optionally select a region on the waveform, then click the effect in the left panel. A dialog opens with parameters. Adjust to taste and click Apply. The effect appears in the history panel on the right.</p>
+
+<div class="tip">💡 If no region is selected, the effect applies to the entire audio file.</div>
+
+<!-- ── Basics ── -->
+<h3>📦 Basics</h3>
+
+<p><b>Reverse</b> — Flips the audio backwards. No parameters needed.</p>
+<div class="audio-desc">🔊 A vocal recording played in reverse sounds like an alien language — syllables become smeared, attacks become decays. A drum hit becomes a rising swell. Reverse is the foundation of many glitch and ambient techniques.</div>
+
+<p><b>Volume</b> — Adjusts the loudness of the audio. Parameter: gain (dB).</p>
+<div class="audio-desc">🔊 Boost to make a quiet section louder, or reduce to create a fade-out effect. Extreme boost (>12dB) will cause distortion clipping, which can be a desired creative effect.</div>
+
+<p><b>Filter</b> — Applies a frequency filter. Parameters: filter type (low-pass, high-pass, band-pass), cutoff frequency (Hz), resonance (Q).</p>
+<div class="audio-desc">🔊 A low-pass filter removes high frequencies, making the sound muffled like hearing music through a wall. A high-pass filter removes bass, making it thin and tinny like a phone speaker. Band-pass isolates a narrow frequency range, creating a "telephone" or "walkie-talkie" effect. High resonance (Q) creates a sharp peak at the cutoff, adding a whistling or ringing quality.</div>
+
+<p><b>Pan / Stereo</b> — Moves the audio in the stereo field. Parameter: pan position (left to right).</p>
+<div class="audio-desc">🔊 Hard left pan makes the sound come only from the left speaker. Center keeps it balanced. Automating pan creates a sense of movement, as if the sound is flying from one ear to the other.</div>
+
+<!-- ── Pitch & Time ── -->
+<h3>🎵 Pitch &amp; Time</h3>
+
+<p><b>Pitch Shift</b> — Changes the pitch without affecting speed. Parameter: semitones (-12 to +12).</p>
+<div class="audio-desc">🔊 Shifting up +12 semitones (one octave) makes a voice sound like a chipmunk. Shifting down -12 makes it deep and booming like a giant. Small shifts (±1-3) create subtle harmonizing or detuning effects. Extreme values create robotic, alien textures.</div>
+
+<p><b>Time Stretch</b> — Changes the speed without affecting pitch. Parameter: stretch factor.</p>
+<div class="audio-desc">🔊 A factor of 2.0 makes the audio twice as slow — a 1-second clip becomes 2 seconds while keeping the same pitch. Factor 0.5 makes it twice as fast. Extreme stretching (4x+) creates dreamy, ambient pads from any source material.</div>
+
+<p><b>Tape Stop</b> — Simulates a tape deck slowing down to a stop. Parameter: duration.</p>
+<div class="audio-desc">🔊 The audio gradually slows down while the pitch drops lower and lower, like unplugging a turntable while a record is playing. A short duration (0.2s) creates a quick "DJ brake" effect. Longer durations (2s+) create a dramatic, eerie slowdown.</div>
+
+<p><b>Autotune</b> — Snaps the pitch to the nearest musical note. Parameters: key, correction strength.</p>
+<div class="audio-desc">🔊 At full strength, every note snaps perfectly to pitch — creating the robotic vocal effect popularized in modern music. At lower strength, it gently corrects pitch while sounding natural. Works best on monophonic sources (single voice or instrument).</div>
+
+<p><b>Pitch Drift (Wave Ondulée)</b> — Creates a wavy pitch modulation. Parameters: speed, depth.</p>
+<div class="audio-desc">🔊 The pitch gently wobbles up and down like a warped vinyl record or a drunk singer. Fast speed with shallow depth sounds like vibrato. Slow speed with deep depth sounds like a cassette tape being stretched and released.</div>
+
+<!-- ── Distortion ── -->
+<h3>🔥 Distortion</h3>
+
+<p><b>Saturation</b> — Adds warm harmonic distortion. Parameter: drive amount.</p>
+<div class="audio-desc">🔊 Light saturation adds warmth and presence, like running audio through a vintage tube amplifier. Heavy saturation makes the sound thick, fuzzy and aggressive — turning a clean guitar into a grungy roar.</div>
+
+<p><b>Distortion</b> — Hard clipping distortion. Parameter: drive, tone.</p>
+<div class="audio-desc">🔊 Harsher than saturation — it aggressively clips the signal peaks, creating a buzzy, crunchy texture. At extreme settings, any input becomes a wall of harsh noise. Great for making drums sound explosive or vocals sound demonic.</div>
+
+<p><b>Bitcrusher</b> — Reduces bit depth and/or sample rate. Parameters: bit depth, sample rate reduction.</p>
+<div class="audio-desc">🔊 Lowering bit depth to 8 or 4 bits makes audio sound like an old video game console — grainy, crunchy, digital. Reducing sample rate adds aliasing artifacts — metallic, buzzy overtones that weren't in the original. At extreme settings (2-bit, very low sample rate), any sound becomes an unrecognizable digital scream.</div>
+
+<!-- ── Modulation ── -->
+<h3>🌊 Modulation</h3>
+
+<p><b>Chorus</b> — Doubles the signal with slight pitch/time variation. Parameters: rate, depth, mix.</p>
+<div class="audio-desc">🔊 Creates the illusion of multiple voices or instruments playing together, like a choir. The sound becomes wider, richer and shimmer-y. Light chorus adds subtle thickness. Heavy chorus creates a watery, swirling texture.</div>
+
+<p><b>Phaser</b> — Sweeps a series of notch filters through the audio. Parameters: rate, depth, stages.</p>
+<div class="audio-desc">🔊 Creates a sweeping, swooshing sound — like a jet plane flying overhead. The effect cycles through peaks and notches in the frequency spectrum. Classic on guitars and synth pads. More stages = more dramatic, spacey sweeping.</div>
+
+<p><b>Tremolo</b> — Rapid volume modulation. Parameters: rate (Hz), depth.</p>
+<div class="audio-desc">🔊 The volume pulses up and down rhythmically, like someone rapidly turning the volume knob. Slow rates (2-4 Hz) create a gentle pulsing. Fast rates (10-20 Hz) create a machine-gun stuttering effect. At extreme rates, it becomes a ring modulation-like buzzing.</div>
+
+<p><b>Ring Mod</b> — Multiplies the signal with a sine wave. Parameter: frequency (Hz).</p>
+<div class="audio-desc">🔊 Creates metallic, inharmonic, alien-sounding tones. Low frequencies (20-50 Hz) add a buzzy tremolo. Medium frequencies (200-500 Hz) create robotic, Dalek-like voices. High frequencies (1000+ Hz) produce bell-like, shimmering metallic textures.</div>
+
+<!-- ── Space & Texture ── -->
+<h3>🌌 Space &amp; Texture</h3>
+
+<p><b>Delay</b> — Repeats the audio after a time gap. Parameters: delay time (ms), feedback, mix.</p>
+<div class="audio-desc">🔊 A single short delay (50-100ms) creates a "slapback" echo like singing in a tiled bathroom. Longer delays (300-500ms) create distinct rhythmic echoes. High feedback makes the echoes repeat many times, building up into a wash of sound that can spiral into infinite feedback.</div>
+
+<p><b>Vinyl</b> — Simulates vinyl record imperfections. Parameters: crackle, warble, noise.</p>
+<div class="audio-desc">🔊 Adds the cozy, nostalgic character of a vinyl record — pops, crackles, surface noise, and subtle pitch warble. Light settings make your audio sound like it's being played from an old record player. Heavy settings make it sound like a damaged, dusty record found in an attic.</div>
+
+<p><b>OTT (Over The Top)</b> — Multi-band upward/downward compression. Parameters: amount, bands.</p>
+<div class="audio-desc">🔊 Makes everything louder, punchier and more "in your face". Quiet parts get boosted, loud parts get tamed. At full strength, every detail of the audio becomes equally loud — breathing, room noise, transients — creating an intense, hyper-compressed sound popular in electronic music.</div>
+
+<p><b>Robotic Voice</b> — Vocoder-style robotic transformation. Parameters: carrier frequency, formant.</p>
+<div class="audio-desc">🔊 Transforms any audio into a robotic, synthetic version of itself. Voices become monotone and metallic, like a robot or computer speaking. Musical instruments gain a synthetic, electronic quality.</div>
+
+<p><b>Hyper</b> — Extreme multiband enhancement. Parameter: intensity.</p>
+<div class="audio-desc">🔊 Pushes the audio into an aggressively enhanced, almost surreal state. Bass gets thicker, mids get more present, highs get more sparkly. At high intensity, the sound becomes almost uncomfortably vivid and energetic.</div>
+
+<!-- ── Glitch ── -->
+<h3>⚡ Glitch</h3>
+
+<p><b>Stutter</b> — Repeats tiny fragments rapidly. Parameters: stutter size (ms), repeat count.</p>
+<div class="audio-desc">🔊 Chops the audio into tiny pieces and repeats each one — creating a "b-b-b-b-b-broken record" effect. Short stutters (10-50ms) create machine-gun rhythmic patterns. Longer stutters (100-200ms) create more musical, beat-repeat-style effects. A classic glitch technique.</div>
+
+<p><b>Granular</b> — Breaks audio into tiny grains and rearranges them. Parameters: grain size, scatter, pitch randomization.</p>
+<div class="audio-desc">🔊 The audio is shattered into microscopic pieces (grains) and reassembled in new ways. Small grains with high scatter create a cloud-like, ambient texture — the original sound dissolves into a shimmering mist. Larger grains with less scatter create a "frozen" or "crystallized" version of the sound.</div>
+
+<p><b>Shuffle</b> — Randomly reorders chunks of audio. Parameters: chunk size, randomness.</p>
+<div class="audio-desc">🔊 Cuts the audio into blocks and rearranges them randomly — like cutting a cassette tape into pieces and taping them back together in random order. Small chunks create chaotic, glitchy patterns. Large chunks create a surreal, mixed-up version of the original.</div>
+
+<p><b>Buffer Freeze</b> — Captures and loops a tiny buffer. Parameters: buffer size, freeze position.</p>
+<div class="audio-desc">🔊 Grabs a tiny fragment of audio and loops it endlessly, creating a sustained, frozen moment in time. Short buffers (5-20ms) create a buzzy, tonal drone from any source material. Longer buffers (50-200ms) create a recognizable loop of the original content.</div>
+
+<p><b>Datamosh</b> — Corrupts the audio data deliberately. Parameters: corruption amount, block size.</p>
+<div class="audio-desc">🔊 Intentionally breaks the audio data, creating digital artifacts, glitches, pops and unexpected textures. Light datamoshing adds subtle digital imperfections. Heavy datamoshing turns the audio into a chaotic mess of digital noise and fragmented remnants of the original — true audio destruction.</div>
+
+<p><b>Vocal Chop</b> — Chops audio into rhythmic segments. Parameters: chop pattern, gate.</p>
+<div class="audio-desc">🔊 Slices the audio into rhythmic pieces and applies silence between them, creating a choppy, rhythmic pattern. Applied to vocals, it creates the classic "chopped vocal" effect used in EDM and pop. Applied to instruments, it creates rhythmic gating effects.</div>
+
+<p><b>Tape Glitch</b> — Simulates damaged tape playback. Parameters: glitch frequency, severity.</p>
+<div class="audio-desc">🔊 Mimics a malfunctioning cassette player — random speed fluctuations, dropouts (brief silences), and warbling. Light settings add vintage character. Heavy settings sound like a tape deck eating your cassette — the audio stutters, warps, and briefly disappears in unpredictable ways.</div>
+
+<!-- ═══════════════════════════════════ -->
+<h2>📜 Effect History</h2>
+
+<p>The right panel shows every effect you've applied, in order. Each entry shows the effect name, a colored indicator, and toggle/delete controls.</p>
+
+<p><b>Toggle on/off</b> — Click the eye icon on any effect to temporarily disable it without deleting it. The audio is re-rendered in real time. This lets you A/B compare your processing.</p>
+
+<p><b>Delete</b> — Click the trash icon to permanently remove an effect. The audio is re-rendered without it.</p>
+
+<p><b>Undo/Redo</b> — <kbd>Ctrl+Z</kbd> undoes the last effect. <kbd>Ctrl+Y</kbd> redoes it. Also available as buttons in the toolbar.</p>
+
+<!-- ═══════════════════════════════════ -->
+<h2>⭐ Favorites &amp; Presets</h2>
+
+<p><b>Favorites</b> — Click the star icon next to any effect to mark it as a favorite. Favorites are persistent across sessions.</p>
+
+<p><b>Presets</b> — Click the "PR" tab in the effects panel to switch to preset view. Presets are saved configurations of effect parameters that you can re-apply instantly.</p>
+
+<p>• <b>+ Preset</b> — Save your current effect parameters as a new preset.<br>
+• <b>Import</b> — Import presets from files.<br>
+• <b>Catalog</b> — Browse the built-in preset catalog.<br>
+• <b>⚙ Manage</b> — Rename, delete, or export your presets.</p>
 
 <!-- ═══════════════════════════════════ -->
 <h2>⚙️ Settings</h2>
 
-<p>Settings are split into three separate windows under the <b>Options</b> menu:</p>
+<p><b>Options &gt; Audio Devices</b> — Select your output device (speakers/headphones) and input device (microphone). Click Refresh to rescan devices. Devices with duplicate names are automatically merged.</p>
 
-<p><b>Audio Devices</b> — Choose your audio output (speakers, headphones, interface) and input (for recording). The ★ marks the system default. Click <b>Refresh</b> to re-scan devices after plugging something in.</p>
+<p><b>Options &gt; Language</b> — Switch between English and French. The entire interface updates instantly.</p>
 
-<p><b>Language</b> — Switch between English and French.</p>
+<p><b>Options &gt; Theme</b> — Switch between dark and light themes.</p>
 
-<p><b>Theme</b> — Choose between Dark and Light mode.</p>
+<p><b>Options &gt; Metronome</b> — Configure BPM (editable number), volume (with percentage), and enable/disable.</p>
 
 <!-- ═══════════════════════════════════ -->
 <h2>⌨️ Keyboard Shortcuts</h2>
 
 <table>
-<tr><th>Key</th><th>Action</th></tr>
-<tr><td><kbd>Ctrl+N</kbd></td><td>New project</td></tr>
-<tr><td><kbd>Ctrl+O</kbd></td><td>Open audio file</td></tr>
-<tr><td><kbd>Ctrl+S</kbd></td><td>Save project</td></tr>
-<tr><td><kbd>Space</kbd></td><td>Play / Stop</td></tr>
-<tr><td><kbd>Ctrl+Z</kbd></td><td>Undo</td></tr>
-<tr><td><kbd>Ctrl+Y</kbd></td><td>Redo</td></tr>
-<tr><td><kbd>M</kbd></td><td>Add marker</td></tr>
-<tr><td><kbd>Ctrl+←</kbd> / <kbd>Ctrl+→</kbd></td><td>Previous / Next marker</td></tr>
-<tr><td><kbd>Ctrl+A</kbd></td><td>Select all</td></tr>
+<tr><th>Shortcut</th><th>Action</th></tr>
+<tr><td><kbd>Space</kbd></td><td>Play / Pause</td></tr>
+<tr><td><kbd>Escape</kbd></td><td>Deselect</td></tr>
+<tr><td><kbd>Ctrl+Z</kbd></td><td>Undo last effect</td></tr>
+<tr><td><kbd>Ctrl+Y</kbd></td><td>Redo last effect</td></tr>
+<tr><td><kbd>M</kbd></td><td>Add marker at current position</td></tr>
+<tr><td><kbd>Ctrl+→</kbd></td><td>Jump to next marker</td></tr>
+<tr><td><kbd>Ctrl+←</kbd></td><td>Jump to previous marker</td></tr>
 <tr><td><kbd>Delete</kbd></td><td>Delete selected clip</td></tr>
-<tr><td><kbd>Esc</kbd></td><td>Deselect</td></tr>
-<tr><td>Mouse wheel</td><td>Zoom waveform &amp; timeline</td></tr>
+<tr><td>Scroll wheel (waveform)</td><td>Zoom waveform</td></tr>
+<tr><td>Scroll wheel (timeline)</td><td>Zoom timeline (independent)</td></tr>
 </table>
 
-<p style="margin-top: 36px; color: #636e72; font-size: 12px; text-align: center;">Glitch Maker v6.0 — <a href="https://github.com/Spiralyfox">github.com/Spiralyfox</a></p>
+<!-- ═══════════════════════════════════ -->
+
+<p style="margin-top: 36px; color: #636e72; font-size: 12px; text-align: center;">
+Glitch Maker v6.2 — Mattéo Dauriac (Spiralyfox)<br>
+<a href="https://github.com/Spiralyfox/GlitchMaker">github.com/Spiralyfox/GlitchMaker</a>
+</p>
 
 </body>
 </html>

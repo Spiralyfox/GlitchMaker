@@ -1,138 +1,125 @@
-# Glitch Maker v6.0 🎵
+# Glitch Maker 🎵
 
-Audio glitch art tool — Creative audio effects workstation.
-*Outil de glitch audio — Station d'effets audio créatifs.*
+## 🇫🇷 Français
 
-## Features / Fonctionnalités
+**Glitch Maker** est une station de travail d'effets audio créatifs conçue pour le sound design, le glitch art sonore et l'expérimentation musicale. Chargez n'importe quel fichier audio (MP3, WAV, FLAC, OGG…) et appliquez des effets destructifs, modulaires ou texturants en temps réel sur tout ou partie du signal.
 
-- **22 effects / effets** : Bitcrusher, Chorus, Delay, Reverb, Distortion, Pitch Shift, Time Stretch, Vinyl, OTT, Stutter, Granular, Filter, Phaser, Ring Mod, Saturation, Shuffle, Tape Stop, Datamosh, Buffer Freeze, Tremolo, Pan, Volume
-- **Non-destructive / Non-destructif** : every effect is a reversible operation / chaque effet est une opération réversible
-- **20 vocal presets / presets vocaux** : Hard Autotune, Hyperpop, Robot, Nightcore, Lo-fi, Demon Voice, Vaporwave, Glitchcore...
-- **Timeline** : drag & drop, split, duplicate, fade in/out, **cut (silence or splice)**
-- **Bilingual / Bilingue** : Français / English
-- **Themes / Thèmes** : Dark / Light
-- **Formats** : WAV, MP3, FLAC, OGG (import/export). Project .gspi with undo/redo
-- **Metronome / Métronome** & **beat grid / grille de tempo**
-- **Spectrum / Spectre**, **minimap**, **markers / marqueurs**
-- **Zoom synced / synchronisé** : waveform ↔ timeline ↔ minimap
+### Ce que fait Glitch Maker
 
-## What's new in v6.0 / Nouveautés v6.0
+Glitch Maker permet de transformer radicalement un fichier audio en lui appliquant des chaînes d'effets non-destructifs. Chaque effet s'ajoute comme une couche que vous pouvez activer, désactiver ou supprimer à tout moment via l'historique. Le logiciel découpe visuellement votre audio en clips sur une timeline, et vous pouvez sélectionner précisément la zone à traiter grâce à la sélection rouge sur la waveform.
 
-### 📐 Menu bar separator / Séparateur barre de menu
-- **Fine line below menu bar** / **Ligne fine sous la barre de menu** : 1px border-bottom on QMenuBar separates File/View/Options from the rest of the UI / ligne de séparation entre le menu et le reste de l'interface
+### Fonctionnalités principales
 
-### 🎨 Header colors fixed / Couleurs d'en-tête corrigées
-- **Effects and History headers now identical** / **En-têtes Effets et Historique désormais identiques** : both use QPalette to force bg_medium background — no more stylesheet cascade issues / les deux utilisent QPalette pour forcer le fond, plus de problème de couleur
+**Interface complète** — Waveform interactive avec zoom indépendant, timeline multi-clips, minimap de navigation, analyseur de spectre en temps réel, métronome synchronisé avec grille de tempo, et transport complet (Play/Pause/Stop avec boucle automatique).
 
-## Previous versions / Versions précédentes
+**27 effets audio** organisés en 6 catégories :
+- **Basics** — Reverse, Volume, Filter, Pan/Stereo : les outils fondamentaux pour manipuler le signal.
+- **Pitch & Time** — Pitch Shift, Time Stretch, Tape Stop, Autotune, Pitch Drift : modifiez la hauteur et la vitesse du son.
+- **Distortion** — Saturation, Distortion, Bitcrusher : écrasez, saturez et dégradez volontairement le signal.
+- **Modulation** — Chorus, Phaser, Tremolo, Ring Mod : créez du mouvement et de la profondeur.
+- **Space & Texture** — Delay, Vinyl, OTT, Robotic Voice, Hyper : ajoutez de l'espace, de la texture et des ambiances.
+- **Glitch** — Stutter, Granular, Shuffle, Buffer Freeze, Datamosh, Vocal Chop, Tape Glitch : les effets destructifs et expérimentaux.
 
-<details><summary>v5.11 — Perfect Layout Lines, Independent Zoom</summary>
+**Système non-destructif** — Chaque effet est enregistré dans un historique. Vous pouvez les activer/désactiver individuellement, les supprimer, et utiliser Ctrl+Z / Ctrl+Y pour annuler/refaire.
 
-- Continuous vertical separator lines. All headers 36px aligned. Independent waveform/timeline zoom. Timeline scrollbar. Minimap appears at slightest zoom.
-</details>
+**Sélection intelligente** — Pendant la lecture, démarrer une sélection met automatiquement en pause. En relâchant, la lecture reprend dans la zone sélectionnée.
 
-<details><summary>v5.10 — Layout Separators, Automation Removed</summary>
+**Édition** — Coupez des portions d'audio (remplacement par du silence ou suppression avec recollage), placez des marqueurs, et naviguez entre eux.
 
-- Separator lines between major UI sections. Automation panel and menu fully removed.
-</details>
+**Presets** — Sauvegardez vos réglages d'effets favoris, importez/exportez des presets, et accédez au catalogue intégré.
 
-<details><summary>v5.9 — Cleaner UI, 3 Settings Dialogs</summary>
+**Multi-langue** — Interface disponible en français et en anglais.
 
-- Separator lines redesigned. Effect history cards. 3 separate settings: Audio, Language, Theme.
-</details>
+**Personnalisation** — Thème sombre/clair, réglages audio (entrée/sortie), métronome configurable (BPM, volume).
 
-<details><summary>v5.8 — UI Polish, Cut, Timeline Zoom</summary>
-
-- History panel harmonized. Separator lines added (then removed in v5.9). Search bar restyled. Split settings dialogs. Enlarged Refresh button. Cut selection (silence/splice). Distinct clip colors. Timeline zoom with mouse wheel. Draggable minimap. Scrollbar removed. Blue anchor fixed.
-</details>
-
-<details><summary>v5.6 — Anchor Playback, Grid Fix</summary>
-
-- Grid display fixed. Stop returns to blue anchor. Play from anchor. Minimap scroll sync. Last clip deletion blocked. New Project reset. UI polish.
-</details>
-
-<details><summary>v5.5 — UI Cleanup & Minimap Fix</summary>
-
-- Effect Chain panel removed. History visible by default. Minimap crash fixed.
-</details>
-
-<details><summary>v5.4 — Effects Crash Fix & Latency</summary>
-
-- `_plugins` dict fix. Stream before play. Timer 60fps. Progressive fallback.
-</details>
-
-<details><summary>v5.3 — Click Crash & Logs</summary>
-
-- `_seek()` and `_on_sel()` fixed. Crash logging. try/except everywhere.
-</details>
-
-<details><summary>v5.2 — Playback Stability</summary>
-
-- Thread-safe signals. Auto audio output. Hot-plug. Protected callback. Manuals rewritten.
-</details>
-
-## Installation
+### Installation
 
 ```bash
-pip install -r requirements.txt
+pip install PyQt6 numpy sounddevice soundfile scipy
 python main.py
 ```
 
-### Dependencies / Dépendances
-- Python 3.10+
-- PyQt6
-- numpy, soundfile, scipy, sounddevice
-- FFmpeg (auto-downloaded if missing / téléchargé automatiquement si absent)
+FFmpeg est téléchargé automatiquement au premier lancement si nécessaire (pour le support MP3/FLAC/OGG).
 
-## Usage / Utilisation
+### Raccourcis clavier
 
-1. **File > Open** (Ctrl+O) to load audio / **Fichier > Ouvrir** pour charger un audio
-2. Select a region on the waveform (or nothing for global) / Sélectionner une zone (ou rien pour global)
-3. Click an effect in the left panel / Cliquer un effet dans le panneau gauche
-4. Adjust parameters, Preview, then Apply / Ajuster les paramètres, Prévisualiser, puis Appliquer
-5. The effect appears in the history panel (right) / L'effet apparaît dans l'historique (droite)
-6. **Toggle** (●) or **Delete** (✕) any effect / **Activer/désactiver** (●) ou **Supprimer** (✕) chaque effet
-7. **Right-click a red selection** to cut / **Clic droit sur une sélection rouge** pour couper
-8. **File > Save** (Ctrl+S) saves as .gspi / **Fichier > Enregistrer** sauvegarde en .gspi
-
-## Keyboard shortcuts / Raccourcis clavier
-
-| Key / Touche | Action |
+| Raccourci | Action |
 |---|---|
-| Ctrl+N | New project / Nouveau projet |
-| Ctrl+O | Open file / Ouvrir un fichier |
-| Ctrl+S | Save project / Sauvegarder |
-| Ctrl+Z | Undo / Annuler |
-| Ctrl+Y | Redo / Refaire |
-| Space / Espace | Play / Stop |
-| Delete / Suppr | Delete selected clip / Supprimer le clip |
-| M | Add marker / Ajouter un marqueur |
-| Ctrl+← / → | Navigate markers / Naviguer entre marqueurs |
-| Ctrl+A | Select all / Tout sélectionner |
-| Esc / Échap | Deselect / Désélectionner |
-| Mouse wheel / Molette | Zoom waveform or timeline (independent / indépendant) |
+| Espace | Lecture / Pause |
+| Escape | Désélectionner |
+| Ctrl+Z | Annuler |
+| Ctrl+Y | Refaire |
+| M | Ajouter un marqueur |
+| Ctrl+← / Ctrl+→ | Marqueur précédent / suivant |
+| Suppr | Supprimer le clip sélectionné |
+| Molette (waveform) | Zoom waveform |
+| Molette (timeline) | Zoom timeline |
 
-## Structure
+---
 
+## 🇬🇧 English
+
+**Glitch Maker** is a creative audio effects workstation designed for sound design, audio glitch art and musical experimentation. Load any audio file (MP3, WAV, FLAC, OGG…) and apply destructive, modular or texturing effects in real time on all or part of the signal.
+
+### What Glitch Maker does
+
+Glitch Maker lets you radically transform an audio file by applying non-destructive effect chains. Each effect is added as a layer that you can enable, disable or delete at any time via the history panel. The software visually slices your audio into clips on a timeline, and you can precisely select the area to process using the red selection on the waveform.
+
+### Key features
+
+**Complete interface** — Interactive waveform with independent zoom, multi-clip timeline, navigation minimap, real-time spectrum analyzer, metronome synchronized with beat grid, and full transport (Play/Pause/Stop with automatic looping).
+
+**27 audio effects** organized in 6 categories:
+- **Basics** — Reverse, Volume, Filter, Pan/Stereo: fundamental tools to manipulate the signal.
+- **Pitch & Time** — Pitch Shift, Time Stretch, Tape Stop, Autotune, Pitch Drift: modify pitch and speed.
+- **Distortion** — Saturation, Distortion, Bitcrusher: crush, saturate and deliberately degrade the signal.
+- **Modulation** — Chorus, Phaser, Tremolo, Ring Mod: create movement and depth.
+- **Space & Texture** — Delay, Vinyl, OTT, Robotic Voice, Hyper: add space, texture and atmospheres.
+- **Glitch** — Stutter, Granular, Shuffle, Buffer Freeze, Datamosh, Vocal Chop, Tape Glitch: destructive and experimental effects.
+
+**Non-destructive system** — Every effect is recorded in a history. You can enable/disable them individually, delete them, and use Ctrl+Z / Ctrl+Y to undo/redo.
+
+**Smart selection** — While audio is playing, starting a selection automatically pauses playback. On release, playback resumes inside the selected zone.
+
+**Editing** — Cut portions of audio (replace with silence or splice), place markers, and navigate between them.
+
+**Presets** — Save your favorite effect settings, import/export presets, and access the built-in catalog.
+
+**Multi-language** — Interface available in French and English.
+
+**Customization** — Dark/light theme, audio settings (input/output), configurable metronome (BPM, volume).
+
+### Installation
+
+```bash
+pip install PyQt6 numpy sounddevice soundfile scipy
+python main.py
 ```
-main.py              Entry point / Point d'entrée
-gui/                 PyQt6 interface
-core/                Audio engine, timeline, project
-effects/             Effect plugins
-plugins/             Plugin loader
-lang/                Translations EN/FR
-assets/              Presets, manuals / manuels
-utils/               Config, translation, logging
-tests/               Unit tests
-```
 
-## Bugs & Contributions
+FFmpeg is automatically downloaded on first launch if needed (for MP3/FLAC/OGG support).
 
-Report bugs by creating an **issue** on GitHub:
-*Signalez les bugs en créant une **issue** sur GitHub :*
-👉 **https://github.com/Spiralyfox**
+### Keyboard shortcuts
 
-## Licence
+| Shortcut | Action |
+|---|---|
+| Space | Play / Pause |
+| Escape | Deselect |
+| Ctrl+Z | Undo |
+| Ctrl+Y | Redo |
+| M | Add marker |
+| Ctrl+← / Ctrl+→ | Previous / next marker |
+| Delete | Delete selected clip |
+| Scroll wheel (waveform) | Waveform zoom |
+| Scroll wheel (timeline) | Timeline zoom |
 
-Personal project — Théo (Spiralyfox)
-*Projet personnel — Théo (Spiralyfox)*
+---
+
+## Crédits / Credits
+
+**Auteur / Author** : Mattéo Dauriac (Spiralyfox)
+
+**Projet / Project** : [github.com/Spiralyfox/GlitchMaker](https://github.com/Spiralyfox/GlitchMaker)
+
+**GitHub** : [github.com/Spiralyfox](https://github.com/Spiralyfox)
+
+Built with Python, PyQt6, NumPy, SciPy, sounddevice, soundfile.

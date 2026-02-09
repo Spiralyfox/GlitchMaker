@@ -70,7 +70,7 @@ class AudioSettingsDialog(QDialog):
     def __init__(self, current_output=None, current_input=None, parent=None):
         super().__init__(parent)
         self.setWindowTitle(t("settings.audio_title"))
-        self.setFixedSize(460, 300)
+        self.setFixedSize(480, 360)
         self.setStyleSheet(_dialog_style())
         self.selected_output = current_output
         self.selected_input = current_input
@@ -79,7 +79,7 @@ class AudioSettingsDialog(QDialog):
 
         lo = QVBoxLayout(self)
         lo.setSpacing(0)
-        lo.setContentsMargins(24, 20, 24, 20)
+        lo.setContentsMargins(28, 24, 28, 24)
 
         lo.addWidget(_title_label(t("settings.audio_title")))
 
@@ -98,17 +98,17 @@ class AudioSettingsDialog(QDialog):
         self._btn_refresh.clicked.connect(self._refresh_devices)
         refresh_row.addWidget(self._btn_refresh)
         lo.addLayout(refresh_row)
-        lo.addSpacing(12)
+        lo.addSpacing(18)
 
         lo.addWidget(_field_label(t("settings.output")))
-        lo.addSpacing(4)
+        lo.addSpacing(6)
         self.combo_out = QComboBox()
         self.combo_out.setStyleSheet(_combo_style())
         lo.addWidget(self.combo_out)
-        lo.addSpacing(12)
+        lo.addSpacing(20)
 
         lo.addWidget(_field_label(t("settings.input")))
-        lo.addSpacing(4)
+        lo.addSpacing(6)
         self.combo_in = QComboBox()
         self.combo_in.setStyleSheet(_combo_style())
         lo.addWidget(self.combo_in)
@@ -116,6 +116,7 @@ class AudioSettingsDialog(QDialog):
         self._populate_devices()
 
         lo.addStretch()
+        lo.addSpacing(16)
         lo.addLayout(_button_row(self, self.reject, self._apply))
 
     def _populate_devices(self):
@@ -129,12 +130,22 @@ class AudioSettingsDialog(QDialog):
             devices = []
             default_out = default_in = -1
 
-        out_devs = [(i, d['name']) for i, d in enumerate(devices)
-                    if d['max_output_channels'] > 0]
-        in_devs = [(i, d['name']) for i, d in enumerate(devices)
-                   if d['max_input_channels'] > 0]
+        # Deduplicate by name — keep first occurrence, prefer default
+        seen_out = {}
+        for i, d in enumerate(devices):
+            if d['max_output_channels'] > 0:
+                name = d['name']
+                if name not in seen_out or i == default_out:
+                    seen_out[name] = i
 
-        for idx, name in out_devs:
+        seen_in = {}
+        for i, d in enumerate(devices):
+            if d['max_input_channels'] > 0:
+                name = d['name']
+                if name not in seen_in or i == default_in:
+                    seen_in[name] = i
+
+        for name, idx in sorted(seen_out.items(), key=lambda x: x[0]):
             suffix = " ★" if idx == default_out else ""
             self.combo_out.addItem(f"{name}{suffix}", idx)
             if self._current_output is not None:
@@ -143,7 +154,7 @@ class AudioSettingsDialog(QDialog):
             elif idx == default_out:
                 self.combo_out.setCurrentIndex(self.combo_out.count() - 1)
 
-        for idx, name in in_devs:
+        for name, idx in sorted(seen_in.items(), key=lambda x: x[0]):
             suffix = " ★" if idx == default_in else ""
             self.combo_in.addItem(f"{name}{suffix}", idx)
             if self._current_input is not None:
