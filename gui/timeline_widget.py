@@ -111,7 +111,7 @@ class TimelineWidget(QWidget):
         return int((sample_pos - vs) / visible_len * self.width())
 
     def _clip_at(self, x):
-        """Retourne le clip a la position sample donnee (ou None)."""
+        """Retourne le clip à la position sample donnée (ou None)."""
         if not self.timeline or not self.timeline.clips: return None
         sample_pos = self._x_to_sample(x)
         for c in self.timeline.clips:

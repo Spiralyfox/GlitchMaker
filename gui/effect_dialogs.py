@@ -10,7 +10,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, QThread, QTimer, pyqtSignal
 from PyQt6.QtGui import QFont
-from utils.config import COLORS
+from utils.config import COLORS, checkbox_css
 import numpy as np
 
 _SS = f"""
@@ -21,12 +21,12 @@ QSlider::handle:horizontal {{ background: {COLORS['accent']}; width: 12px; heigh
 QSlider::sub-page:horizontal {{ background: {COLORS['accent_secondary']}; border-radius: 2px; }}
 QSpinBox, QDoubleSpinBox, QComboBox {{ background: {COLORS['bg_dark']}; color: {COLORS['text']};
     border: 1px solid {COLORS['border']}; border-radius: 4px; padding: 4px; font-size: 11px; }}
-QCheckBox {{ color: {COLORS['text']}; font-size: 11px; }}
+{checkbox_css()}
 QDial {{ background: transparent; }}
 """
 
 def _btn(text, bg=COLORS['accent']):
-    """Cree un bouton stylise pour le dialogue d effet."""
+    """Crée un bouton stylisé pour le dialogue d effet."""
     b = QPushButton(text); b.setFixedHeight(30)
     b.setCursor(Qt.CursorShape.PointingHandCursor)
     b.setStyleSheet(f"QPushButton {{ background: {bg}; color: white; border: none; border-radius: 5px; font-weight: bold; }} QPushButton:hover {{ background: {COLORS['accent_hover']}; }}")
@@ -102,8 +102,8 @@ class _Base(QDialog):
         self._pv_playing = False
         self._pv_device = None   # will receive playback.output_device
 
-    """Ajoute une rangee de widgets au layout."""
-    """Ajoute une rangee label + widget au layout du dialogue."""
+    """Ajoute une rangée de widgets au layout."""
+    """Ajoute une rangée label + widget au layout du dialogue."""
     def _row(self, label): self._lo.addWidget(QLabel(label))
 
     def setup_preview(self, segment, sr, process_fn, output_device=None):
@@ -123,7 +123,7 @@ class _Base(QDialog):
         self._rnd_btn.setToolTip("Randomize parameters")
         self._rnd_btn.clicked.connect(self._randomize_params)
         r.addWidget(self._rnd_btn)
-        self._pv_btn = _btn("▶ Preview", "#2563eb")
+        self._pv_btn = _btn("▶ Preview", "#7c3aed")
         self._pv_btn.setFixedWidth(100)
         self._pv_btn.clicked.connect(self._toggle_preview)
         self._pv_btn.setVisible(False)
@@ -201,7 +201,7 @@ class _Base(QDialog):
             self._pv_playing = False
 
     def _on_preview_done(self):
-        """Callback quand la lecture de preview est terminee."""
+        """Callback quand la lecture de preview est terminée."""
         self._pv_playing = False
         self._pv_btn.setText("▶ Preview"); self._pv_btn.setEnabled(True)
 
@@ -615,7 +615,7 @@ class PanDialog(_Base):
 
 class WaveOnduleeDialog(_Base):
     def __init__(self, p=None):
-        """Initialise les sliders de parametres pour WaveOndulee."""
+        """Initialise les sliders de paramètres pour WaveOndulee."""
         super().__init__("Pitch Drift", p)
         self.sp = _slider_float(self._lo, "Speed (Hz)", 0.1, 15.0, 3.0, 0.1, 1, " Hz", 10)
         self.pd = _slider_float(self._lo, "Pitch depth", 0.0, 1.0, 0.4, 0.05, 2)

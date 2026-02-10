@@ -562,12 +562,12 @@ def audio_to_mono(data: np.ndarray) -> np.ndarray:
 
 
 def get_duration(data: np.ndarray, sr: int) -> float:
-    """Retourne la duree en secondes d un tableau audio."""
+    """Retourne la durée en secondes d'un tableau audio."""
     return len(data) / sr
 
 
 def format_time(seconds: float) -> str:
-    """Formate une duree en secondes vers MM:SS.cc."""
+    """Formate une durée en secondes vers MM:SS.cc."""
     m = int(seconds // 60)
     s = seconds % 60
     return f"{m:02d}:{s:05.2f}"

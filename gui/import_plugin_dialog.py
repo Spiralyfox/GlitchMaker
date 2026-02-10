@@ -29,7 +29,7 @@ _SS = f"""
 
 
 def _btn(text, bg=COLORS['accent']):
-    """Cree un bouton stylise pour le dialogue."""
+    """Crée un bouton stylisé pour le dialogue."""
     b = QPushButton(text)
     b.setFixedHeight(30)
     b.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -135,7 +135,7 @@ class ImportPluginDialog(QDialog):
         return self._changed
 
     def _pick_py(self):
-        """Ouvre un dialogue pour selectionner le fichier .py du plugin."""
+        """Ouvre un dialogue pour sélectionner le fichier .py du plugin."""
         path, _ = QFileDialog.getOpenFileName(
             self, "Select effect .py file", "",
             "Python files (*.py)")
@@ -145,7 +145,7 @@ class ImportPluginDialog(QDialog):
             self._py_label.setStyleSheet(f"color: {COLORS['text']}; font-size: 10px;")
 
     def _pick_json(self):
-        """Ouvre un dialogue pour selectionner le fichier i18n du plugin."""
+        """Ouvre un dialogue pour sélectionner le fichier i18n du plugin."""
         path, _ = QFileDialog.getOpenFileName(
             self, "Select translations .json file", "",
             "JSON files (*.json)")

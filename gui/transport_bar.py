@@ -6,6 +6,7 @@ from utils.config import COLORS
 class TransportBar(QWidget):
     play_clicked = pyqtSignal(); pause_clicked = pyqtSignal(); stop_clicked = pyqtSignal()
     volume_changed = pyqtSignal(float); add_audio_clicked = pyqtSignal()
+    automations_clicked = pyqtSignal()
 
     def __init__(self, parent=None):
         """Initialise la barre de transport (play/stop/volume/temps)."""
@@ -35,12 +36,16 @@ class TransportBar(QWidget):
         self.lbl_vol = QLabel("80%"); self.lbl_vol.setStyleSheet(f"color: {COLORS['text_dim']}; font-size: 10px;"); self.lbl_vol.setFixedWidth(30)
         self.vol_slider.valueChanged.connect(lambda v: self.lbl_vol.setText(f"{v}%")); lo.addWidget(self.lbl_vol)
         lo.addSpacing(8)
+        self.btn_auto = self._btn("Automations", 90, COLORS['button_bg'])
+        self.btn_auto.setToolTip("Open Automations window")
+        self.btn_auto.clicked.connect(self.automations_clicked.emit); lo.addWidget(self.btn_auto)
+        lo.addSpacing(4)
         self.btn_add = self._btn("＋", 36, COLORS['button_bg'])
         self.btn_add.setToolTip("Add audio to timeline")
         self.btn_add.clicked.connect(self.add_audio_clicked.emit); lo.addWidget(self.btn_add)
 
     def _btn(self, text, width, bg, bold=False):
-        """Cree un bouton stylise pour la barre de transport."""
+        """Crée un bouton stylisé pour la barre de transport."""
         b = QPushButton(text); b.setFixedSize(width, 32); b.setCursor(Qt.CursorShape.PointingHandCursor)
         bw = "bold" if bold else "normal"
         b.setStyleSheet(f"QPushButton {{ background: {bg}; color: white; border: none; border-radius: 5px; font-size: 13px; font-weight: {bw}; }} QPushButton:hover {{ background: {COLORS['accent_hover']}; }}")

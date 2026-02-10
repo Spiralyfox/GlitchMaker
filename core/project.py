@@ -116,7 +116,7 @@ def load_project(filepath):
 def _ser_ops(ops):
     out = []
     for op in ops:
-        d = {k: v for k, v in op.items() if k != "_process_fn"}
+        d = {k: v for k, v in op.items() if k not in ("_process_fn", "_state_after")}
         # Convert numpy types
         for key in ["start", "end"]:
             if key in d and hasattr(d[key], 'item'):

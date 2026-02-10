@@ -86,7 +86,7 @@ class WaveformWidget(QWidget):
             self.update()
 
     def set_audio(self, data, sr):
-        """Charge les donnees audio a afficher et reinitialise le zoom."""
+        """Charge les données audio à afficher et réinitialise le zoom."""
         self.audio_data = data
         self.sample_rate = sr
         self._cache = None
@@ -104,7 +104,7 @@ class WaveformWidget(QWidget):
         self.update()
 
     def set_clip_highlight(self, s, e):
-        """Met en surbrillance un clip (bordure verte pointillee)."""
+        """Met en surbrillance un clip (bordure verte pointillée)."""
         self._clip_hl_start, self._clip_hl_end = s, e
         self.update()
 
@@ -315,7 +315,8 @@ class WaveformWidget(QWidget):
             en = max(self.selection_start, self.selection_end)
             self.cut_splice_requested.emit(s, en)
         elif action == a_add:
-            name, ok = QInputDialog.getText(self, "Marker", "Marker name:",
+            name, ok = QInputDialog.getText(self, t("marker.add_title"),
+                                            t("marker.add_prompt"),
                                             text=f"M{len(self._markers)+1}")
             if ok and name:
                 self.add_marker(name, pos)

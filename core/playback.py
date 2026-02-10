@@ -45,7 +45,7 @@ class PlaybackEngine:
             self._ensure_stream()
 
     def _ensure_stream(self):
-        """Cree ou recreee le stream de sortie avec les bons parametres (sr, channels)."""
+        """Crée ou recrée le stream de sortie avec les bons paramètres (sr, channels)."""
         if self._stream is not None:
             try:
                 self._stream.close()
@@ -156,7 +156,7 @@ class PlaybackEngine:
         self.loop_start = None; self.loop_end = None; self.looping = False
 
     def seek(self, pos):
-        """Deplace la tete de lecture a la position donnee (en samples)."""
+        """Déplace la tête de lecture à la position donnée (en samples)."""
         self.position = max(0, min(pos, len(self.audio_data) - 1 if self.audio_data is not None else 0))
 
     def set_volume(self, v):
@@ -168,7 +168,7 @@ class PlaybackEngine:
         self.loop_start = start; self.loop_end = end; self.looping = looping
 
     def set_output_device(self, device_idx):
-        """Change le peripherique de sortie audio et recreee le stream."""
+        """Change le périphérique de sortie audio et recrée le stream."""
         self.output_device = device_idx
         if self.audio_data is not None: self._ensure_stream()
 

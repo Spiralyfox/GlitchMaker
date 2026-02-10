@@ -426,13 +426,13 @@ class EffectsPanel(QWidget):
         self._rebuild()
 
     def set_presets(self, tag_map, all_presets):
-        """Met a jour la liste des presets affichee."""
+        """Met à jour la liste des presets affichée."""
         self._tag_presets = tag_map
         self._all_presets = all_presets
         self._rebuild()
 
     def _tab(self, text, active):
-        """Cree un bouton d onglet (Effets / Presets)."""
+        """Crée un bouton d'onglet (Effets / Presets)."""
         b = QPushButton(text)
         b.setFixedSize(28, 22)
         b.setCheckable(True)
@@ -446,7 +446,7 @@ class EffectsPanel(QWidget):
         return b
 
     def _sbtn(self, text):
-        """Cree un petit bouton pour la section presets."""
+        """Crée un petit bouton pour la section presets."""
         b = QPushButton(text)
         b.setFixedHeight(24)
         b.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
@@ -577,7 +577,7 @@ class EffectsPanel(QWidget):
         self._scroll.setWidget(container)
 
     def _slabel(self, text):
-        """Cree un label de section."""
+        """Crée un label de section."""
         l = QLabel(text)
         l.setStyleSheet(
             f"color: {COLORS['text_dim']}; font-size: 9px; "
@@ -586,7 +586,7 @@ class EffectsPanel(QWidget):
         return l
 
     def _sep(self):
-        """Cree un separateur horizontal fin, meme style que sous le header EFFECTS."""
+        """Crée un séparateur horizontal fin, même style que sous le header EFFECTS."""
         s = QFrame()
         s.setFrameShape(QFrame.Shape.HLine)
         s.setFrameShadow(QFrame.Shadow.Plain)

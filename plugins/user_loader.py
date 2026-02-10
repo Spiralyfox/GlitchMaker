@@ -44,7 +44,7 @@ def get_user_translation(plugin_id: str, key: str, lang: str) -> str | None:
 # ═══ Registry management ═══
 
 def _ensure_dir():
-    """Cree le dossier user_plugins s il n existe pas."""
+    """Crée le dossier user_plugins s'il n'existe pas."""
     os.makedirs(_BASE_DIR, exist_ok=True)
 
 
@@ -287,7 +287,7 @@ def load_user_plugins() -> dict:
 
             # Create wrapper function
             def _make_wrapper(fn):
-                """Cree une fonction wrapper pour un plugin utilisateur."""
+                """Crée une fonction wrapper pour un plugin utilisateur."""
                 def wrapper(audio_data, start, end, sr=44100, **kw):
                     """Fonction wrapper qui appelle process() du plugin utilisateur."""
                     return fn(audio_data, start, end, sr=sr, **kw)

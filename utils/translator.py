@@ -12,7 +12,7 @@ else:
     _LANG_DIR = os.path.join(os.path.dirname(_THIS_DIR), "lang")
 
 def set_language(lang: str) -> bool:
-    """Charge le fichier de traduction pour la langue donnee."""
+    """Charge le fichier de traduction pour la langue donnée."""
     global _strings, _lang
     _lang = lang
     path = os.path.join(_LANG_DIR, f"{lang}.json")
@@ -28,11 +28,11 @@ def set_language(lang: str) -> bool:
         _strings = {}; return False
 
 def get_language() -> str:
-    """Retourne le code langue actuel (ex: "fr")."""
+    """Retourne le code langue actuel (ex : "fr")."""
     return _lang
 
 def t(key: str, **kw) -> str:
-    """Traduit une cle (ex: "menu.file") avec substitution optionnelle."""
+    """Traduit une clé (ex : "menu.file") avec substitution optionnelle."""
     text = _strings.get(key)
     if text is None:
         return key.split(".")[-1].replace("_", " ").capitalize()

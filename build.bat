@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 >nul
 echo ========================================
-echo    Glitch Maker v6.10 - Compilation .exe
+echo    Glitch Maker - Compilation .exe
 echo ========================================
 echo.
 

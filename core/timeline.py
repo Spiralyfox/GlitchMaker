@@ -33,20 +33,26 @@ class AudioClip:
     position: int = 0       # sample offset in timeline
     color: str = ""
     id: str = field(default_factory=lambda: uuid.uuid4().hex[:8])
+    # Fade parameters (stored so we can re-edit without stacking)
+    fade_in_params: dict = field(default_factory=dict)
+    fade_out_params: dict = field(default_factory=dict)
+    # Original audio before fade was applied (for undo/redo of fade)
+    _audio_before_fade_in: np.ndarray | None = field(default=None, repr=False)
+    _audio_before_fade_out: np.ndarray | None = field(default=None, repr=False)
 
     @property
     def duration_samples(self) -> int:
-        """Retourne la duree du clip en samples."""
+        """Retourne la durée du clip en samples."""
         return len(self.audio_data) if self.audio_data is not None else 0
 
     @property
     def duration_seconds(self) -> float:
-        """Retourne la duree du clip en secondes."""
+        """Retourne la durée du clip en secondes."""
         return self.duration_samples / self.sample_rate if self.sample_rate > 0 else 0.0
 
     @property
     def end_position(self) -> int:
-        """Retourne la position de fin du clip (position + duree)."""
+        """Retourne la position de fin du clip (position + durée)."""
         return self.position + self.duration_samples
 
 
@@ -97,16 +103,37 @@ class Timeline:
             name=name, audio_data=audio_data.copy() if copy else audio_data,
             sample_rate=sr, position=position, color=color
         )
+        is_first = len(self.clips) == 0
         self.clips.append(clip)
-        self.sample_rate = sr
+        if is_first:
+            self.sample_rate = sr
         return clip
 
     def render(self) -> tuple[np.ndarray, int]:
-        """Render all clips into a single stereo float32 buffer."""
+        """Render all clips into a single stereo float32 buffer.
+        Resamples any clip whose sample_rate differs from the timeline's."""
         if not self.clips:
             return np.zeros((0, 2), dtype=np.float32), self.sample_rate
 
         self.clips.sort(key=lambda c: c.position)
+
+        # Resample clips that don't match the target sample rate
+        from scipy.signal import resample as scipy_resample
+        for clip in self.clips:
+            if clip.sample_rate != self.sample_rate and clip.sample_rate > 0 and self.sample_rate > 0:
+                new_len = int(len(clip.audio_data) * self.sample_rate / clip.sample_rate)
+                if new_len > 0 and new_len != len(clip.audio_data):
+                    d = clip.audio_data
+                    if d.ndim == 1:
+                        clip.audio_data = scipy_resample(d, new_len).astype(np.float32)
+                    else:
+                        channels = [scipy_resample(d[:, ch], new_len).astype(np.float32)
+                                    for ch in range(d.shape[1])]
+                        clip.audio_data = np.column_stack(channels)
+                clip.sample_rate = self.sample_rate
+
+        # Recalculate positions after potential resample
+        self.reposition_clips()
 
         total = max(c.end_position for c in self.clips)
         out = np.zeros((total, 2), dtype=np.float32)
@@ -131,10 +158,10 @@ class Timeline:
 
     @property
     def total_duration_samples(self) -> int:
-        """Retourne la duree totale en samples (fin du dernier clip)."""
+        """Retourne la durée totale en samples (fin du dernier clip)."""
         return max((c.end_position for c in self.clips), default=0)
 
     @property
     def total_duration_seconds(self) -> float:
-        """Retourne la duree totale en secondes."""
+        """Retourne la durée totale en secondes."""
         return self.total_duration_samples / self.sample_rate if self.sample_rate > 0 else 0.0

@@ -2,7 +2,7 @@
 import os, sys, json, shutil
 
 APP_NAME = "Glitch Maker"
-APP_VERSION = "6.10"
+APP_VERSION = "6.20"
 WINDOW_MIN_WIDTH = 1050
 WINDOW_MIN_HEIGHT = 650
 RECORDING_SAMPLE_RATE = 44100
@@ -87,6 +87,21 @@ def set_theme(theme: str):
 def get_colors() -> dict:
     """Return the current color palette dict."""
     return COLORS
+
+def checkbox_css(C=None) -> str:
+    """Return a QCheckBox stylesheet with dark unchecked / accent checked indicators."""
+    if C is None:
+        C = COLORS
+    return (
+        f"QCheckBox {{ color: {C['text']}; font-size: 11px; spacing: 6px; }}"
+        f" QCheckBox::indicator {{ width: 16px; height: 16px; border-radius: 3px;"
+        f"   border: 1px solid {C['border']}; background: {C['bg_dark']}; }}"
+        f" QCheckBox::indicator:hover {{ border-color: {C['accent']}; }}"
+        f" QCheckBox::indicator:checked {{ background: {C['accent']};"
+        f"   border-color: {C['accent']}; }}"
+        f" QCheckBox::indicator:checked:hover {{ background: {C['accent_hover']};"
+        f"   border-color: {C['accent_hover']}; }}"
+    )
 
 # ═══════════════════════════════════════════════════
 #  Portable data directory — next to exe / main.py

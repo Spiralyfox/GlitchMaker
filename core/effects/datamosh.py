@@ -10,7 +10,7 @@ import numpy as np
 def datamosh(audio_data: np.ndarray, start: int, end: int,
              intensity: float = 0.5, block_size: int = 512,
              mode: str = "swap") -> np.ndarray:
-    """Corrompt l'audio en manipulant les donnees brutes.
+    """Corrompt l'audio en manipulant les données brutes.
     Modes: swap (echange de blocs), repeat (repete des blocs),
            zero (met des blocs a zero), noise (injecte du bruit)."""
     result = audio_data.copy()

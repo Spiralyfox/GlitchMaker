@@ -97,7 +97,7 @@ def _w_pitch_shift(audio_data, start, end, sr=44100, **kw):
     from core.effects.pitch_shift import pitch_shift, pitch_shift_simple
     if kw.get("simple", False):
         return pitch_shift_simple(audio_data, start, end,
-                                  semitones=kw.get("semitones", 0), sr=sr)
+                                  semitones=kw.get("semitones", 0))
     return pitch_shift(audio_data, start, end,
                        semitones=kw.get("semitones", 0), sr=sr)
 
@@ -229,7 +229,7 @@ def _w_datamosh(audio_data, start, end, sr=44100, **kw):
                     block_size=kw.get("block_size", 512))
 
 def _w_wave_ondulee(audio_data, start, end, sr=44100, **kw):
-    """Wrapper : applique l effet Wave Ondulee."""
+    """Wrapper : applique l'effet Wave Ondulée."""
     from core.effects.wave_ondulee import wave_ondulee
     return wave_ondulee(audio_data, start, end, sr=sr,
                         speed=kw.get("speed", 3.0),

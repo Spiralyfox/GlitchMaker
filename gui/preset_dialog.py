@@ -64,7 +64,7 @@ EFFECT_NAMES = sorted(EFFECT_MAP.keys())
 
 
 def _btn(text, bg=COLORS['accent']):
-    """Cree un bouton stylise."""
+    """Crée un bouton stylisé."""
     b = QPushButton(text); b.setFixedHeight(30)
     b.setCursor(Qt.CursorShape.PointingHandCursor)
     b.setStyleSheet(
@@ -75,7 +75,7 @@ def _btn(text, bg=COLORS['accent']):
 
 
 def _link_btn(text, color=COLORS['selection']):
-    """Cree un bouton-lien (texte sans bordure)."""
+    """Crée un bouton-lien (texte sans bordure)."""
     b = QPushButton(text); b.setFixedHeight(22)
     b.setCursor(Qt.CursorShape.PointingHandCursor)
     b.setStyleSheet(
@@ -86,7 +86,7 @@ def _link_btn(text, color=COLORS['selection']):
 
 
 def _sep():
-    """Cree un separateur horizontal."""
+    """Crée un séparateur horizontal."""
     s = QFrame(); s.setFrameShape(QFrame.Shape.HLine)
     s.setStyleSheet(f"color: {COLORS['border']};"); return s
 
@@ -166,7 +166,7 @@ class TagManageDialog(QDialog):
         self._populate()
 
     def _delete(self):
-        """Supprime le tag selectionne."""
+        """Supprime le tag sélectionné."""
         items = self.lst.selectedItems()
         if not items:
             return
@@ -355,18 +355,18 @@ class PresetCreateDialog(QDialog):
             self._refresh_tag_combo()
 
     def _add_tag(self):
-        """Ajoute un tag au preset en cours d edition."""
+        """Ajoute un tag au preset en cours d'édition."""
         tag = self.tag_combo.currentText()
         if tag and not self.tag_list.findItems(tag, Qt.MatchFlag.MatchExactly):
             self.tag_list.addItem(tag)
 
     def _rm_tag(self):
-        """Retire un tag du preset en cours d edition."""
+        """Retire un tag du preset en cours d'édition."""
         for it in self.tag_list.selectedItems():
             self.tag_list.takeItem(self.tag_list.row(it))
 
     def _add_eff(self):
-        """Ajoute un effet a la chaine (pas de doublons)."""
+        """Ajoute un effet à la chaîne (pas de doublons)."""
         name = self.eff_combo.currentText()
         existing = [e["name"] for e in self._effects_data]
         if name in existing:
@@ -377,7 +377,7 @@ class PresetCreateDialog(QDialog):
         self._rebuild_eff_list()
 
     def _rm_eff(self):
-        """Retire l'effet selectionne de la chaine."""
+        """Retire l'effet sélectionné de la chaîne."""
         # Find which row is "selected" (has focus)
         if not self._effects_data:
             return
@@ -460,7 +460,7 @@ class PresetCreateDialog(QDialog):
         self._eff_lo.addStretch()
 
     def _remove_at(self, idx):
-        """Retire l'effet a l'index donne."""
+        """Retire l'effet à l'index donné."""
         if 0 <= idx < len(self._effects_data):
             self._effects_data.pop(idx)
             self._rebuild_eff_list()
@@ -959,24 +959,24 @@ class ImportChooserDialog(QDialog):
         title.setStyleSheet(f"color: {COLORS['accent']};")
         lo.addWidget(title)
 
-        lo.addWidget(QLabel("What would you like to import?"))
+        lo.addWidget(QLabel(t("import.choose_prompt")))
         lo.addSpacing(4)
 
-        b1 = _btn("Import Effect Plugin (.py)")
+        b1 = _btn(t("import.effect_plugin"))
         b1.clicked.connect(lambda: self._choose(self.CHOICE_EFFECT))
         lo.addWidget(b1)
 
-        b2 = _btn("Import Preset (.pspi)")
+        b2 = _btn(t("import.preset"))
         b2.clicked.connect(lambda: self._choose(self.CHOICE_PRESET))
         lo.addWidget(b2)
 
         lo.addSpacing(4)
-        b3 = _btn("Help: How to create Effects & Presets", COLORS['button_bg'])
+        b3 = _btn(t("import.help"), COLORS['button_bg'])
         b3.clicked.connect(lambda: self._choose(self.CHOICE_HELP))
         lo.addWidget(b3)
 
         lo.addStretch()
-        bc = _btn("Cancel", COLORS['button_bg'])
+        bc = _btn(t("dialog.cancel"), COLORS['button_bg'])
         bc.clicked.connect(self.reject)
         lo.addWidget(bc)
 
@@ -990,20 +990,20 @@ class ImportChooserDialog(QDialog):
 # ═══════════════════════════════════════════════════
 
 _HELP_FR = """
-<h2 style="color: #7c5cfc;">Comment creer et importer des Effets &amp; Presets</h2>
+<h2 style="color: #7c5cfc;">Comment créer et importer des Effets &amp; Presets</h2>
 
-<h3 style="color: #a78bfa;">Creer un Effet personnalise (.py)</h3>
+<h3 style="color: #a78bfa;">Créer un Effet personnalisé (.py)</h3>
 <p>Un effet est un fichier Python (<code>.py</code>) qui doit contenir :</p>
 <ol>
-<li><b>Metadonnees</b> en haut du fichier :
+<li><b>Métadonnées</b> en haut du fichier :
 <pre style="background: #1a1a30; padding: 8px; border-radius: 4px;">
 EFFECT_ID      = "mon_effet"      # identifiant unique
-EFFECT_ICON    = "M"              # lettre affichee dans l'icone
+EFFECT_ICON    = "M"              # lettre affichée dans l'icône
 EFFECT_COLOR   = "#ff6b35"        # couleur hex
-EFFECT_SECTION = "Custom"         # categorie (Basics, Distortion, etc.)
+EFFECT_SECTION = "Custom"         # catégorie (Basics, Distortion, etc.)
 </pre>
 </li>
-<li><b>Une classe Dialog</b> heritant de <code>_Base</code> :
+<li><b>Une classe Dialog</b> héritant de <code>_Base</code> :
 <pre style="background: #1a1a30; padding: 8px; border-radius: 4px;">
 from gui.effect_dialogs import _Base, _slider_int
 
@@ -1027,27 +1027,27 @@ def process(audio_data, start, end, sr=44100, **kw):
 </pre>
 </li>
 </ol>
-<p><b>Fichier de traduction (optionnel)</b> : un fichier <code>.json</code> avec les cles
+<p><b>Fichier de traduction (optionnel)</b> : un fichier <code>.json</code> avec les clés
 <code>cat.mon_effet.name</code>, <code>cat.mon_effet.short</code>, <code>cat.mon_effet.detail</code>
 en <code>"en"</code> et <code>"fr"</code>.</p>
-<p>Importez via <b>Import &gt; Import Effect Plugin</b> en selectionnant le .py et optionnellement le .json.</p>
+<p>Importez via <b>Import &gt; Import Effect Plugin</b> en sélectionnant le .py et optionnellement le .json.</p>
 
 <hr style="border-color: #2a2a4a;">
 
-<h3 style="color: #a78bfa;">Creer et exporter un Preset (.pspi)</h3>
-<p>Un preset est une chaine d'effets sauvegardee avec des parametres preconfigures.</p>
+<h3 style="color: #a78bfa;">Créer et exporter un Preset (.pspi)</h3>
+<p>Un preset est une chaîne d'effets sauvegardée avec des paramètres préconfigurés.</p>
 <ol>
 <li>Cliquez sur <b>New Preset</b> dans le panneau d'effets</li>
 <li>Donnez un nom, une description, des tags</li>
-<li>Ajoutez des effets a la chaine</li>
-<li>Cliquez sur <b>Settings</b> a cote de chaque effet pour configurer ses parametres</li>
+<li>Ajoutez des effets à la chaîne</li>
+<li>Cliquez sur <b>Settings</b> à côté de chaque effet pour configurer ses paramètres</li>
 <li>Cliquez sur <b>Save</b></li>
 </ol>
-<p><b>Exporter</b> : cliquez sur <b>Export</b>, selectionnez un preset utilisateur, et choisissez un emplacement
+<p><b>Exporter</b> : cliquez sur <b>Export</b>, sélectionnez un preset utilisateur, et choisissez un emplacement
 pour le fichier <code>.pspi</code>.</p>
-<p><b>Importer</b> : cliquez sur <b>Import &gt; Import Preset</b> et selectionnez un fichier <code>.pspi</code>.
-Les presets importes apparaissent dans la vue PR du panneau d'effets.</p>
-<p>Le format .pspi est un fichier JSON contenant la liste des effets et leurs parametres.
+<p><b>Importer</b> : cliquez sur <b>Import &gt; Import Preset</b> et sélectionnez un fichier <code>.pspi</code>.
+Les presets importés apparaissent dans la vue PR du panneau d'effets.</p>
+<p>Le format .pspi est un fichier JSON contenant la liste des effets et leurs paramètres.
 Vous pouvez le partager avec d'autres utilisateurs de Glitch Maker.</p>
 """
 

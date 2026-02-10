@@ -1,8 +1,4 @@
-"""
-Main window — Glitch Maker v5.6
-v5.6: 9 fixes — grid display, anchor-based stop/play, anchor sync waveform↔timeline,
-minimap scroll sync, prevent last clip deletion, new project full reset, UI polish.
-"""
+"""Main window — Glitch Maker."""
 
 import os, copy, uuid
 from datetime import datetime
@@ -19,7 +15,7 @@ from gui.waveform_widget import WaveformWidget
 from gui.timeline_widget import TimelineWidget
 from gui.effects_panel import EffectsPanel
 from gui.transport_bar import TransportBar
-from gui.dialogs import RecordDialog, AboutDialog
+from gui.dialogs import RecordDialog, AboutDialog, FadeDialog
 from gui.catalog_dialog import CatalogDialog
 from gui.settings_dialog import AudioSettingsDialog, LanguageSettingsDialog, ThemeSettingsDialog
 from gui.preset_dialog import (PresetCreateDialog, PresetManageDialog,
@@ -28,6 +24,7 @@ from gui.spectrum_widget import SpectrumWidget
 from gui.minimap_widget import MinimapWidget
 from gui.effect_history import EffectHistoryPanel
 from gui.progress_overlay import ProgressOverlay
+from gui.automation_window import AutomationWindow
 
 from core.audio_engine import (
     load_audio, export_audio, ensure_stereo, get_duration, format_time,
@@ -37,14 +34,14 @@ from core.playback import PlaybackEngine
 from core.timeline import Timeline, AudioClip, _generate_distinct_color
 from core.project import save_project, load_project
 from core.preset_manager import PresetManager
-from core.effects.utils import fade_in, fade_out
+from core.effects.utils import fade_in, fade_out, apply_envelope_fade
 
 from plugins.loader import load_plugins
 
 from utils.config import (
     COLORS, APP_NAME, APP_VERSION, WINDOW_MIN_WIDTH, WINDOW_MIN_HEIGHT,
     AUDIO_EXTENSIONS, ALL_EXTENSIONS, load_settings, save_settings,
-    set_theme, get_theme
+    set_theme, get_theme, checkbox_css
 )
 from utils.translator import t, set_language, get_language
 from utils.logger import get_logger
@@ -76,7 +73,7 @@ class _FFmpegDownloadThread(QThread):
             download_ffmpeg()
             self.status.emit("FFmpeg ready ✓")
         except Exception as e:
-            self.status.emit(f"FFmpeg: {e}")
+            self.status.emit(f"FFmpeg : {e}")
 
 
 # Clip color palette
@@ -110,9 +107,11 @@ class MainWindow(QMainWindow):
 
         # ── Non-destructive effect system (v4.4) ──
         self._base_audio: np.ndarray | None = None     # original unmodified audio
-        self._effect_ops: list[dict] = []               # list of effect operations
+        self._effect_ops: list[dict] = []               # list of ALL operations (effects + structural)
         self._ops_undo: list[dict] = []                 # undo stack (ops snapshots)
         self._ops_redo: list[dict] = []                 # redo stack
+        self._initial_base_audio: np.ndarray | None = None  # audio at project start
+        self._initial_clips: list = []                       # clips at project start
         self._clip_color_idx = 0                        # for different clip colors
 
         # Load effect plugins
@@ -148,6 +147,7 @@ class MainWindow(QMainWindow):
             QMenu::separator {{ height: 1px; background: {COLORS['border']}; margin: 3px 8px; }}
             QToolTip {{ background: {COLORS['bg_medium']}; color: {COLORS['text']};
                 border: 1px solid {COLORS['accent']}; padding: 6px; font-size: 11px; }}
+            {checkbox_css()}
         """)
         self.statusBar().showMessage("Ready")
 
@@ -244,7 +244,7 @@ class MainWindow(QMainWindow):
         tlo.addWidget(self.btn_bpm_plus)
         tlo.addSpacing(4)
 
-        self.btn_grid = QPushButton("Grid: Off"); self.btn_grid.setFixedHeight(26)
+        self.btn_grid = QPushButton("Grid : Off"); self.btn_grid.setFixedHeight(26)
         self.btn_grid.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_grid.setStyleSheet(_tss); self.btn_grid.clicked.connect(self._show_grid_menu)
         tlo.addWidget(self.btn_grid)
@@ -303,7 +303,7 @@ class MainWindow(QMainWindow):
         vsep_right.setStyleSheet(f"background: {COLORS['border']};")
         mlo.addWidget(vsep_right)
 
-        # ── Right panel: effect history ──
+        # ── Right panel: history ──
         self.effect_history = EffectHistoryPanel()
         self.effect_history.setObjectName("effectHistoryPanel")
         mlo.addWidget(self.effect_history)
@@ -311,6 +311,10 @@ class MainWindow(QMainWindow):
         # Progress overlay
         self.progress_overlay = ProgressOverlay(center)
         self.progress_overlay.setVisible(False)
+
+        # Automation window (floating, hidden by default)
+        self._auto_win = AutomationWindow(self._plugins, parent=self)
+        self._auto_win.hide()
 
     def _make_toolbar_btn(self, text):
         b = QPushButton(text); b.setFixedHeight(26)
@@ -352,6 +356,7 @@ class MainWindow(QMainWindow):
         panels = [
             ("spectrum",        t("view.spectrum"),      False),
             ("effect_history",  t("view.history"),       True),
+            ("automation",      "Automations",           False),
         ]
         for key, label, default_on in panels:
             act = QAction(label, self)
@@ -451,6 +456,19 @@ class MainWindow(QMainWindow):
         # v4.4: non-destructive ops signals
         self.effect_history.op_deleted.connect(self._delete_op)
         self.effect_history.op_toggled.connect(self._toggle_op)
+        self.effect_history.clear_all.connect(self._clear_all_ops)
+
+        # Automation window signals
+        self._auto_win.automation_added.connect(self._add_automation)
+        self._auto_win.automation_edited.connect(self._edit_automation)
+        self._auto_win.automation_deleted.connect(self._delete_op)
+        self._auto_win.automation_toggled.connect(self._toggle_op)
+        self._auto_win.preview_requested.connect(self._preview_automation)
+        self._auto_win.preview_base_requested.connect(self._preview_base_region)
+        self._auto_win.stop_requested.connect(self._stop)
+        self._auto_win.window_closed.connect(self._on_auto_win_closed)
+        self._auto_win.set_playback_engine(self.playback)
+        self.transport.automations_clicked.connect(self._toggle_auto_window)
 
     def _update_undo_labels(self):
         has_u = bool(self._ops_undo)
@@ -459,10 +477,10 @@ class MainWindow(QMainWindow):
         self.btn_redo.setEnabled(has_r)
         if has_u:
             desc = self._ops_undo[-1].get("desc", "")
-            self.btn_undo.setToolTip(f"Undo: {desc}")
+            self.btn_undo.setToolTip(f"Undo : {desc}")
         if has_r:
             desc = self._ops_redo[-1].get("desc", "")
-            self.btn_redo.setToolTip(f"Redo: {desc}")
+            self.btn_redo.setToolTip(f"Redo : {desc}")
 
     # ══════ Waveform Scroll ══════
 
@@ -528,22 +546,22 @@ class MainWindow(QMainWindow):
             ("Off", 0), ("1 bar", 1), ("1/2", 2), ("1/4", 4),
             ("1/8", 8), ("1/16", 16), ("1/32", 32),
         ]:
-            a = m.addAction(f"Grid: {label}")
+            a = m.addAction(f"Grid : {label}")
             a.triggered.connect(lambda _, l=label, s=subdiv: self._set_grid(l, s))
         m.exec(self.btn_grid.mapToGlobal(self.btn_grid.rect().bottomLeft()))
 
     def _set_grid(self, label, subdiv):
-        self.btn_grid.setText(f"Grid: {label}")
+        self.btn_grid.setText(f"Grid : {label}")
         bpm = self.bpm_spin.value()
         self.waveform.set_grid(subdiv > 0, bpm, 4, subdiv if subdiv > 0 else 1)
-        self.statusBar().showMessage(f"Grid: {label}" if subdiv else "Grid off")
+        self.statusBar().showMessage(f"Grid : {label}" if subdiv else "Grid : off")
 
     def _open_metronome_dialog(self):
         from PyQt6.QtWidgets import QGroupBox
         d = QDialog(self); d.setWindowTitle(t("metro.title")); d.setFixedSize(380, 300)
         d.setStyleSheet(f"QDialog {{ background: {COLORS['bg_medium']}; }}"
                         f" QLabel {{ color: {COLORS['text']}; font-size: 12px; }}"
-                        f" QCheckBox {{ color: {COLORS['text']}; font-size: 12px; }}")
+                        f" {checkbox_css()}")
         lo = QVBoxLayout(d)
         lo.setContentsMargins(24, 20, 24, 20)
         lo.setSpacing(12)
@@ -737,7 +755,7 @@ class MainWindow(QMainWindow):
                 return
             self.waveform.set_selection(s_samp, e_samp)
             dur_s = (e_samp - s_samp) / self.sample_rate
-            self.transport.set_selection_info(f"Sel: {format_time(dur_s)}")
+            self.transport.set_selection_info(f"Sel : {format_time(dur_s)}")
             fav = getattr(self.effects_panel, 'favorites', [])
             if fav:
                 names = []
@@ -901,6 +919,7 @@ class MainWindow(QMainWindow):
             self.timeline.add_clip(st, sr, name=name, position=0, color=color)
             self._base_audio = st.copy()
             self._effect_ops.clear()
+            self._store_initial_state()
 
             self._ops_undo.clear(); self._ops_redo.clear()
             self._update_undo_labels()
@@ -932,14 +951,24 @@ class MainWindow(QMainWindow):
                 self._load_audio(fp)
                 return
             self._push_undo("Add clip")
+            # Resample to match project sample rate if needed
+            if sr != self.sample_rate and self.sample_rate > 0:
+                from scipy.signal import resample as scipy_resample
+                new_len = int(len(st) * self.sample_rate / sr)
+                if new_len > 0:
+                    channels = []
+                    for ch in range(st.shape[1] if st.ndim > 1 else 1):
+                        ch_data = st[:, ch] if st.ndim > 1 else st
+                        channels.append(scipy_resample(ch_data, new_len))
+                    st = np.column_stack(channels).astype(np.float32)
+                sr = self.sample_rate
             color = CLIP_COLORS[self._clip_color_idx % len(CLIP_COLORS)]
             self._clip_color_idx += 1
             self.timeline.add_clip(st, sr, name=name, color=color)
             self._rebuild_audio()
             self._base_audio = self.audio_data.copy()
-            self._effect_ops.clear()
+            self._add_structural_op("add_clip", f"➕ {name}")
             self._refresh_all()
-            self._sync_history_chain()
             self._unsaved = True
             self.statusBar().showMessage(f"Added: {os.path.basename(fp)}")
         except Exception as e:
@@ -960,6 +989,7 @@ class MainWindow(QMainWindow):
             self._ops_undo = result.get("undo_stack", [])
             self._ops_redo = result.get("redo_stack", [])
             self._rebuild_audio()
+            self._store_initial_state()
             if self._base_audio is not None and self._effect_ops:
                 self._render_from_ops()
             self._update_undo_labels()
@@ -1047,7 +1077,7 @@ class MainWindow(QMainWindow):
                 self.waveform.set_clip_highlight(c.position, c.end_position)
                 self.waveform.set_selection(c.position, c.end_position)
                 dur = format_time(c.duration_seconds)
-                self.transport.set_selection_info(f"Sel: {dur}")
+                self.transport.set_selection_info(f"Sel : {dur}")
                 self.playback.seek(c.position)
                 self.waveform.set_playhead(c.position)
                 self.timeline_w.set_playhead(c.position, self.sample_rate)
@@ -1141,6 +1171,11 @@ class MainWindow(QMainWindow):
         """Apply a single op on current audio_data (fast, for new ops)."""
         if not op.get("enabled", True) or self.audio_data is None:
             return
+        if op.get("type") == "automation":
+            self._render_auto_op(op)
+            self._update_clips_from_audio()
+            self._refresh_all()
+            return
         plugin = self._find_plugin(op["effect_id"])
         if not plugin: return
         s = op.get("start", 0)
@@ -1168,17 +1203,54 @@ class MainWindow(QMainWindow):
             _log.error("Apply op error: %s", ex, exc_info=True)
 
     def _render_from_ops(self):
-        """Re-render audio from base by replaying all enabled ops."""
-        if self._base_audio is None:
+        """Re-render audio by restoring latest structural state then applying effects."""
+        # Find the last enabled structural op
+        last_struct_idx = -1
+        for i, op in enumerate(self._effect_ops):
+            if op.get("enabled", True) and op.get("type", "effect") in self._STRUCTURAL_TYPES:
+                last_struct_idx = i
+
+        # Restore base state
+        if last_struct_idx >= 0:
+            state = self._effect_ops[last_struct_idx].get("_state_after")
+            if state:
+                self._restore_state_snapshot(state)
+                # base_audio from snapshot is already the rendered timeline
+                self.audio_data = self._base_audio.copy() if self._base_audio is not None else None
+            else:
+                # Fallback: use current base_audio (project loaded without snapshots)
+                if self._base_audio is None:
+                    return
+                self.audio_data = self._base_audio.copy()
+        elif self._initial_base_audio is not None:
+            # No structural ops: restore initial state
+            self._restore_initial_state()
+            self.audio_data = self._base_audio.copy() if self._base_audio is not None else None
+        else:
+            # Backward compat: no initial state stored
+            if self._base_audio is None:
+                return
+            self.audio_data = self._base_audio.copy()
+
+        if self.audio_data is None:
             return
-        self.audio_data = self._base_audio.copy()
-        for op in self._effect_ops:
+
+        # Apply all enabled effect/automation ops AFTER the last structural op
+        for i, op in enumerate(self._effect_ops):
+            if i <= last_struct_idx:
+                continue  # already baked into structural snapshot
             if not op.get("enabled", True):
                 continue
-            plugin = self._find_plugin(op["effect_id"])
+            if op.get("type", "effect") in self._STRUCTURAL_TYPES:
+                continue  # disabled structural ops are skipped
+            # Automation ops
+            if op.get("type") == "automation":
+                self._render_auto_op(op)
+                continue
+            # Effect ops
+            plugin = self._find_plugin(op.get("effect_id"))
             if not plugin:
                 continue
-            # For global ops, always use full current audio length
             if op.get("is_global", False):
                 s = 0
                 e = len(self.audio_data)
@@ -1209,37 +1281,137 @@ class MainWindow(QMainWindow):
         self._update_clips_from_audio()
         self._refresh_all()
 
+    def _render_auto_op(self, op):
+        """Render a single automation op on self.audio_data (multi-param)."""
+        from core.automation import apply_automation_multi
+        plugin = self._find_plugin(op.get("effect_id"))
+        if not plugin:
+            return
+        n = len(self.audio_data)
+        s = op.get("start") or 0
+        e = op.get("end") or n
+        s = max(0, min(int(s), n))
+        e = max(s, min(int(e), n))
+        if e - s < 1:
+            return
+        auto_params = op.get("auto_params", [])
+        # Legacy single-param fallback
+        if not auto_params and op.get("auto_param"):
+            auto_params = [{"key": op["auto_param"], "mode": "automated",
+                            "default_val": op.get("auto_default", 0),
+                            "target_val": op.get("auto_target", 1),
+                            "curve_points": op.get("curve_points", [(0, 0), (1, 1)])}]
+        if not auto_params:
+            return
+        try:
+            self.audio_data = apply_automation_multi(
+                self.audio_data, s, e,
+                plugin.process_fn, auto_params, self.sample_rate)
+        except Exception as ex:
+            _log.warning("Automation render %s failed: %s", op.get("name"), ex)
+
     def _delete_op(self, uid):
-        """Delete an op by uid and re-render."""
+        """Delete an op by uid and re-render.
+        - Deleting a structural op: confirmation + truncate from that point.
+        - Deleting an effect BEFORE the last structural op: just remove it (it was overridden).
+        - Deleting an effect AFTER the last structural op: remove and re-render.
+        """
         idx = next((i for i, o in enumerate(self._effect_ops) if o.get("uid") == uid), None)
-        if idx is None: return
-        name = self._effect_ops[idx].get("name", "?")
-        self._push_undo(f"Delete: {name}")
-        self._effect_ops.pop(idx)
+        if idx is None:
+            return
+        op = self._effect_ops[idx]
+        name = op.get("name", "?")
+        is_structural = op.get("type", "effect") in self._STRUCTURAL_TYPES
+
+        # Find the last structural op index
+        last_struct_idx = -1
+        for i, o in enumerate(self._effect_ops):
+            if o.get("type", "effect") in self._STRUCTURAL_TYPES:
+                last_struct_idx = i
+
+        if is_structural:
+            # Count how many ops will be lost
+            ops_after = len(self._effect_ops) - idx - 1
+            if ops_after > 0:
+                reply = QMessageBox.question(
+                    self, APP_NAME,
+                    t("history.delete_structural").format(
+                        name=name, count=ops_after),
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.No)
+                if reply != QMessageBox.StandardButton.Yes:
+                    return
+            self._push_undo(f"Delete : {name}")
+            self._effect_ops = self._effect_ops[:idx]
+        elif idx < last_struct_idx:
+            # Effect before the last structural op — it's overridden anyway.
+            # Just remove it from the list, no re-render needed.
+            self._push_undo(f"Delete : {name}")
+            self._effect_ops.pop(idx)
+            self._sync_history_chain()
+            self._unsaved = True
+            self.statusBar().showMessage(f"Removed : {name}")
+            return
+        else:
+            # Effect after the last structural op — remove and re-render
+            self._push_undo(f"Delete : {name}")
+            self._effect_ops.pop(idx)
+
         self._render_from_ops()
         self._sync_history_chain()
         self._unsaved = True
-        self.statusBar().showMessage(f"Removed: {name}")
+        self.statusBar().showMessage(f"Removed : {name}")
+
+    def _clear_all_ops(self):
+        """Clear all history ops after confirmation."""
+        if not self._effect_ops:
+            return
+        reply = QMessageBox.question(
+            self, APP_NAME,
+            t("history.clear_confirm").format(count=len(self._effect_ops)),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No)
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+        self._push_undo("Clear all history")
+        self._effect_ops.clear()
+        self._render_from_ops()
+        self._sync_history_chain()
+        self._unsaved = True
+        self.statusBar().showMessage(t("history.cleared"))
 
     def _toggle_op(self, uid):
-        """Toggle an op enabled/disabled and re-render."""
+        """Toggle an op enabled/disabled and re-render.
+        Structural ops cannot be toggled (UI prevents it)."""
         op = next((o for o in self._effect_ops if o.get("uid") == uid), None)
         if op is None: return
-        self._push_undo(f"Toggle: {op['name']}")
+        # Structural ops cannot be toggled
+        if op.get("type", "effect") in self._STRUCTURAL_TYPES:
+            return
+        self._push_undo(f"Toggle : {op['name']}")
         op["enabled"] = not op.get("enabled", True)
         self._render_from_ops()
         self._sync_history_chain()
         self._unsaved = True
         state = "ON" if op["enabled"] else "OFF"
-        self.statusBar().showMessage(f"{op['name']}: {state}")
+        self.statusBar().showMessage(f"{op['name']} : {state}")
 
     def _move_op(self, uid, direction):
-        """Move an op up or down in the chain and re-render."""
+        """Move an op up or down in the chain and re-render.
+        Cannot move across structural op boundaries or move structural ops."""
         idx = next((i for i, o in enumerate(self._effect_ops) if o.get("uid") == uid), None)
         if idx is None: return
+        op = self._effect_ops[idx]
+        # Structural ops cannot be moved
+        if op.get("type", "effect") in self._STRUCTURAL_TYPES:
+            return
         new_idx = idx + direction
         if new_idx < 0 or new_idx >= len(self._effect_ops): return
-        self._push_undo(f"Move: {self._effect_ops[idx]['name']}")
+        # Cannot swap with a structural op
+        target = self._effect_ops[new_idx]
+        if target.get("type", "effect") in self._STRUCTURAL_TYPES:
+            return
+        self._push_undo(f"Move : {op['name']}")
         self._effect_ops[idx], self._effect_ops[new_idx] = \
             self._effect_ops[new_idx], self._effect_ops[idx]
         self._render_from_ops()
@@ -1247,8 +1419,171 @@ class MainWindow(QMainWindow):
         self._unsaved = True
 
     def _sync_history_chain(self):
-        """Sync history widget with current ops."""
-        self.effect_history.set_ops(self._effect_ops)
+        """Sync history panel and automation window with current ops."""
+        # Compute the last structural op index so the panel can dim overridden ops
+        last_struct_idx = -1
+        for i, op in enumerate(self._effect_ops):
+            if op.get("type", "effect") in self._STRUCTURAL_TYPES:
+                last_struct_idx = i
+        self.effect_history.set_ops(self._effect_ops, last_struct_idx)
+        if self._auto_win.isVisible():
+            self._auto_win.set_automations(self._effect_ops)
+            audio = self.audio_data if self.audio_data is not None else self._base_audio
+            if audio is not None:
+                self._auto_win.set_audio(audio, self.sample_rate)
+
+    def _sync_auto_audio(self):
+        """Push current rendered audio to the automation window.
+        Uses the fully-rendered audio_data so the preview reflects prior effects."""
+        audio = self.audio_data if self.audio_data is not None else self._base_audio
+        if audio is not None:
+            self._auto_win.set_audio(audio, self.sample_rate)
+            self._auto_win.set_automations(self._effect_ops)
+
+    # ── Structural ops helpers ──
+
+    _STRUCTURAL_TYPES = frozenset({
+        "cut_silence", "cut_splice", "fade_in", "fade_out",
+        "add_clip", "record", "delete_clip", "split", "duplicate", "reorder",
+    })
+
+    def _capture_state(self):
+        """Capture current base_audio + clips as a state snapshot."""
+        clips = []
+        for c in self.timeline.clips:
+            clips.append({
+                "name": c.name,
+                "data": c.audio_data.copy(),
+                "position": c.position,
+                "color": c.color,
+                "fade_in_params": dict(c.fade_in_params) if c.fade_in_params else {},
+                "fade_out_params": dict(c.fade_out_params) if c.fade_out_params else {},
+                "bfi": c._audio_before_fade_in.copy() if c._audio_before_fade_in is not None else None,
+                "bfo": c._audio_before_fade_out.copy() if c._audio_before_fade_out is not None else None,
+            })
+        return {
+            "base": self._base_audio.copy() if self._base_audio is not None else None,
+            "clips": clips,
+        }
+
+    def _restore_state_snapshot(self, snap):
+        """Restore base_audio + clips from a state snapshot."""
+        if snap is None:
+            return
+        self._base_audio = snap["base"].copy() if snap["base"] is not None else None
+        self.timeline.clear()
+        for cd in snap["clips"]:
+            c = AudioClip(name=cd["name"], audio_data=cd["data"].copy(),
+                          sample_rate=self.sample_rate,
+                          position=cd["position"], color=cd["color"])
+            c.fade_in_params = cd.get("fade_in_params", {})
+            c.fade_out_params = cd.get("fade_out_params", {})
+            c._audio_before_fade_in = cd["bfi"].copy() if cd.get("bfi") is not None else None
+            c._audio_before_fade_out = cd["bfo"].copy() if cd.get("bfo") is not None else None
+            self.timeline.clips.append(c)
+
+    def _store_initial_state(self):
+        """Store the initial project state for history replay."""
+        self._initial_base_audio = self._base_audio.copy() if self._base_audio is not None else None
+        self._initial_clips = []
+        for c in self.timeline.clips:
+            self._initial_clips.append({
+                "name": c.name,
+                "data": c.audio_data.copy(),
+                "position": c.position,
+                "color": c.color,
+            })
+
+    def _restore_initial_state(self):
+        """Restore the initial project state."""
+        if self._initial_base_audio is None:
+            return
+        self._base_audio = self._initial_base_audio.copy()
+        self.timeline.clear()
+        for cd in self._initial_clips:
+            c = AudioClip(name=cd["name"], audio_data=cd["data"].copy(),
+                          sample_rate=self.sample_rate,
+                          position=cd["position"], color=cd["color"])
+            self.timeline.clips.append(c)
+
+    def _add_structural_op(self, op_type, name):
+        """Add a structural action to the ops history with state snapshot."""
+        import uuid as _uuid
+        state = self._capture_state()
+        op = {
+            "uid": str(_uuid.uuid4())[:8],
+            "type": op_type,
+            "name": name,
+            "timestamp": datetime.now().strftime("%d/%m %H:%M:%S"),
+            "enabled": True,
+            "is_global": True,
+            "_state_after": state,
+        }
+        self._effect_ops.append(op)
+        self._sync_history_chain()
+
+    def _add_automation(self, op):
+        """Add a new automation as an effect op."""
+        import uuid as _uuid
+        op["uid"] = str(_uuid.uuid4())[:8]
+        op["enabled"] = True
+        op["is_global"] = False
+        op["color"] = "#7c3aed"
+        op["timestamp"] = datetime.now().strftime("%d/%m %H:%M:%S")
+        op["params"] = {}
+        self._add_op(op)
+
+    def _edit_automation(self, op):
+        """Edit an existing automation op (multi-param)."""
+        uid = op.get("uid")
+        existing = next((o for o in self._effect_ops if o.get("uid") == uid), None)
+        if existing is None:
+            return
+        self._push_undo(f"Edit: {op.get('name', 'Automation')}")
+        for k in ("name", "effect_id", "auto_params", "start", "end"):
+            if k in op:
+                existing[k] = op[k]
+        self._render_from_ops()
+        self._sync_history_chain()
+        self._unsaved = True
+
+    def _preview_automation(self, config, start, end):
+        """Preview a multi-param automation on the current audio (with all prior effects)."""
+        if self.audio_data is None:
+            return
+        from core.automation import apply_automation_multi
+        plugin = self._find_plugin(config.get("effect_id"))
+        if not plugin:
+            return
+        auto_params = config.get("auto_params", [])
+        if not auto_params:
+            return
+        try:
+            preview = self.audio_data.copy()
+            s = max(0, min(start, len(preview)))
+            e = max(s, min(end, len(preview)))
+            if e - s > 0:
+                preview = apply_automation_multi(
+                    preview, s, e,
+                    plugin.process_fn, auto_params, self.sample_rate)
+            self.playback.load(preview, self.sample_rate)
+            self.playback.play_selection(s, e)
+        except Exception as ex:
+            _log.error("Automation preview error: %s", ex, exc_info=True)
+
+    def _preview_base_region(self, start, end):
+        """Play the current audio in a given region (no additional automation)."""
+        audio = self.audio_data if self.audio_data is not None else self._base_audio
+        if audio is None:
+            return
+        try:
+            s = max(0, min(start, len(audio)))
+            e = max(s, min(end, len(audio)))
+            if e - s > 0:
+                self.playback.load(audio, self.sample_rate)
+                self.playback.play_selection(s, e)
+        except Exception as ex:
+            _log.error("Base preview error: %s", ex)
 
     def _run_plugin(self, effect_id, seg, sr, params):
         plugin = self._find_plugin(effect_id)
@@ -1431,11 +1766,42 @@ class MainWindow(QMainWindow):
 
     # ══════ Panel visibility ══════
 
+    def _on_auto_win_closed(self):
+        """Called when user closes the automation window with X."""
+        act = self._view_actions.get("automation")
+        if act and act.isChecked():
+            act.blockSignals(True)
+            act.setChecked(False)
+            act.blockSignals(False)
+
+    def _toggle_auto_window(self):
+        """Toggle automation window from the transport button."""
+        if self._auto_win.isVisible():
+            self._auto_win.hide()
+            self._on_auto_win_closed()
+        else:
+            self._auto_win.show()
+            self._auto_win.raise_()
+            self._sync_auto_audio()
+            act = self._view_actions.get("automation")
+            if act and not act.isChecked():
+                act.blockSignals(True)
+                act.setChecked(True)
+                act.blockSignals(False)
+
     def _toggle_panel(self, key, visible):
         panel_map = {
             "spectrum":       [self.spectrum],
             "effect_history": [self.effect_history],
         }
+        if key == "automation":
+            if visible:
+                self._auto_win.show()
+                self._auto_win.raise_()
+                self._sync_auto_audio()
+            else:
+                self._auto_win.hide()
+            return
         widgets = panel_map.get(key, [])
         for w in widgets:
             w.setVisible(visible)
@@ -1446,8 +1812,7 @@ class MainWindow(QMainWindow):
         self._push_undo("Reorder")
         self._rebuild_audio()
         self._base_audio = self.audio_data.copy() if self.audio_data is not None else None
-        self._effect_ops.clear()
-        self._sync_history_chain()
+        self._add_structural_op("reorder", "↕ Reorder")
         self._unsaved = True
 
     def _split_clip(self, cid, pos):
@@ -1470,8 +1835,7 @@ class MainWindow(QMainWindow):
         self.timeline.clips[idx:idx+1] = [c1, c2]
         self._rebuild_audio()
         self._base_audio = self.audio_data.copy() if self.audio_data is not None else None
-        self._effect_ops.clear()
-        self._sync_history_chain()
+        self._add_structural_op("split", f"✂ Split ({clip.name})")
         self._unsaved = True
 
     def _dup_clip(self, cid):
@@ -1487,8 +1851,7 @@ class MainWindow(QMainWindow):
         self.timeline.clips.insert(idx + 1, dup)
         self._rebuild_audio()
         self._base_audio = self.audio_data.copy() if self.audio_data is not None else None
-        self._effect_ops.clear()
-        self._sync_history_chain()
+        self._add_structural_op("duplicate", f"📋 Duplicate ({clip.name})")
         self._unsaved = True
 
     def _del_clip(self, cid):
@@ -1498,12 +1861,19 @@ class MainWindow(QMainWindow):
             if len(self.timeline.clips) <= 1:
                 QMessageBox.information(self, APP_NAME, t("timeline.last_clip"))
                 return
+            clip_name = clip.name
+            reply = QMessageBox.question(
+                self, APP_NAME,
+                t("confirm.delete_clip").format(name=clip_name),
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No)
+            if reply != QMessageBox.StandardButton.Yes:
+                return
             self._push_undo("Delete clip")
             self.timeline.remove_clip(clip)
             self._rebuild_audio()
             self._base_audio = self.audio_data.copy() if self.audio_data is not None else None
-            self._effect_ops.clear()
-            self._sync_history_chain()
+            self._add_structural_op("delete_clip", f"🗑 {clip_name}")
             self._refresh_all()
             self._unsaved = True
         except Exception as e:
@@ -1512,6 +1882,12 @@ class MainWindow(QMainWindow):
     def _cut_replace_silence(self, sel_start, sel_end):
         """Cut selection: replace with silence. Creates 3 clips (before, silence, after) per affected clip."""
         if self.audio_data is None or not self.timeline.clips:
+            return
+        reply = QMessageBox.question(
+            self, APP_NAME, t("confirm.cut_silence"),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No)
+        if reply != QMessageBox.StandardButton.Yes:
             return
         self._push_undo("Cut (silence)")
         new_clips = []
@@ -1563,14 +1939,19 @@ class MainWindow(QMainWindow):
             pos += c.duration_samples
         self._rebuild_audio()
         self._base_audio = self.audio_data.copy() if self.audio_data is not None else None
-        self._effect_ops.clear()
-        self._sync_history_chain()
+        self._add_structural_op("cut_silence", "✂ Cut (silence)")
         self.waveform.clear_selection()
         self._unsaved = True
 
     def _cut_splice(self, sel_start, sel_end):
         """Cut selection: remove and splice. Creates 2 clips (before, after) per affected clip."""
         if self.audio_data is None or not self.timeline.clips:
+            return
+        reply = QMessageBox.question(
+            self, APP_NAME, t("confirm.cut_splice"),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No)
+        if reply != QMessageBox.StandardButton.Yes:
             return
         self._push_undo("Cut (splice)")
         new_clips = []
@@ -1619,32 +2000,97 @@ class MainWindow(QMainWindow):
             pos += c.duration_samples
         self._rebuild_audio()
         self._base_audio = self.audio_data.copy() if self.audio_data is not None else None
-        self._effect_ops.clear()
-        self._sync_history_chain()
+        self._add_structural_op("cut_splice", "✂ Cut (splice)")
         self.waveform.clear_selection()
         self._unsaved = True
 
     def _fi_clip(self, cid):
         clip = self._find_clip(cid)
         if clip is None: return
+        # Use original audio for preview (before any fade-in was applied)
+        original = clip._audio_before_fade_in if clip._audio_before_fade_in is not None else clip.audio_data
+        clip_dur_ms = int(len(original) / clip.sample_rate * 1000)
+        dlg = FadeDialog("in", clip_dur_ms, parent=self,
+                         clip_audio=original.copy(),
+                         sample_rate=self.sample_rate,
+                         playback_engine=self.playback,
+                         existing_params=clip.fade_in_params or None)
+        if dlg.exec() != dlg.DialogCode.Accepted:
+            return
         self._push_undo("Fade In")
-        fade_len = min(len(clip.audio_data) // 4, self.sample_rate // 2)
-        clip.audio_data = fade_in(clip.audio_data, fade_len)
+        params = dlg.get_params()
+        # Restore original audio before applying new fade (no stacking)
+        if clip._audio_before_fade_in is not None:
+            clip.audio_data = clip._audio_before_fade_in.copy()
+            # Re-apply fade-out if it exists
+            if clip.fade_out_params:
+                p = clip.fade_out_params
+                fs = int(p["duration_ms"] / 1000.0 * self.sample_rate)
+                if "points" in p:
+                    clip.audio_data = apply_envelope_fade(
+                        clip.audio_data, fs, p["points"], p["bends"], "out")
+                else:
+                    clip.audio_data = fade_out(clip.audio_data, fs,
+                                               p["curve_type"], p["start_level"], p["end_level"],
+                                               p.get("curvature", 0.0))
+        # Save original for future re-edits
+        if clip._audio_before_fade_in is None:
+            clip._audio_before_fade_in = clip.audio_data.copy()
+        # Apply new fade-in (envelope-based)
+        fade_samples = int(params["duration_ms"] / 1000.0 * self.sample_rate)
+        clip.audio_data = apply_envelope_fade(
+            clip.audio_data, fade_samples,
+            params["points"], params["bends"], "in")
+        clip.fade_in_params = params
         self._rebuild_audio()
         self._base_audio = self.audio_data.copy() if self.audio_data is not None else None
-        if self._effect_ops:
+        self._add_structural_op("fade_in", f"🔊 Fade In ({clip.name})")
+        if self._effect_ops and any(op.get("type", "effect") not in self._STRUCTURAL_TYPES for op in self._effect_ops):
             self._render_from_ops()
         self._unsaved = True
 
     def _fo_clip(self, cid):
         clip = self._find_clip(cid)
         if clip is None: return
+        # Use original audio for preview (before any fade-out was applied)
+        original = clip._audio_before_fade_out if clip._audio_before_fade_out is not None else clip.audio_data
+        clip_dur_ms = int(len(original) / clip.sample_rate * 1000)
+        dlg = FadeDialog("out", clip_dur_ms, parent=self,
+                         clip_audio=original.copy(),
+                         sample_rate=self.sample_rate,
+                         playback_engine=self.playback,
+                         existing_params=clip.fade_out_params or None)
+        if dlg.exec() != dlg.DialogCode.Accepted:
+            return
         self._push_undo("Fade Out")
-        fade_len = min(len(clip.audio_data) // 4, self.sample_rate // 2)
-        clip.audio_data = fade_out(clip.audio_data, fade_len)
+        params = dlg.get_params()
+        # Restore original audio before applying new fade (no stacking)
+        if clip._audio_before_fade_out is not None:
+            clip.audio_data = clip._audio_before_fade_out.copy()
+            # Re-apply fade-in if it exists
+            if clip.fade_in_params:
+                p = clip.fade_in_params
+                fs = int(p["duration_ms"] / 1000.0 * self.sample_rate)
+                if "points" in p:
+                    clip.audio_data = apply_envelope_fade(
+                        clip.audio_data, fs, p["points"], p["bends"], "in")
+                else:
+                    clip.audio_data = fade_in(clip.audio_data, fs,
+                                              p["curve_type"], p["start_level"], p["end_level"],
+                                              p.get("curvature", 0.0))
+        # Save original for future re-edits
+        if clip._audio_before_fade_out is None:
+            clip._audio_before_fade_out = clip.audio_data.copy()
+        # Apply new fade-out (envelope-based)
+        fade_samples = int(params["duration_ms"] / 1000.0 * self.sample_rate)
+        clip.audio_data = apply_envelope_fade(
+            clip.audio_data, fade_samples,
+            params["points"], params["bends"], "out")
+        clip.fade_out_params = params
         self._rebuild_audio()
         self._base_audio = self.audio_data.copy() if self.audio_data is not None else None
-        if self._effect_ops:
+        self._add_structural_op("fade_out", f"🔉 Fade Out ({clip.name})")
+        if self._effect_ops and any(op.get("type", "effect") not in self._STRUCTURAL_TYPES for op in self._effect_ops):
             self._render_from_ops()
         self._unsaved = True
 
@@ -1666,10 +2112,9 @@ class MainWindow(QMainWindow):
 
     def _push_undo(self, desc=""):
         """Push current state to undo stack (ops + base + clips, no rendered audio)."""
-        import copy
         snapshot = {
             "desc": desc,
-            "ops": copy.deepcopy(self._effect_ops),
+            "ops": self._copy_ops(self._effect_ops),
             "base_audio": self._base_audio.copy() if self._base_audio is not None else None,
             "clips": [(c.name, c.audio_data.copy(), c.position, c.color)
                       for c in self.timeline.clips] if self.timeline.clips else [],
@@ -1680,13 +2125,30 @@ class MainWindow(QMainWindow):
         self._ops_redo.clear()
         self._update_undo_labels()
 
+    @staticmethod
+    def _copy_ops(ops):
+        """Copy ops list, sharing heavy _state_after references (immutable snapshots)."""
+        result = []
+        for op in ops:
+            d = {}
+            for k, v in op.items():
+                if k == "_state_after":
+                    d[k] = v  # shared ref — never mutated
+                elif isinstance(v, dict):
+                    d[k] = dict(v)
+                elif isinstance(v, list):
+                    d[k] = list(v)
+                else:
+                    d[k] = v
+            result.append(d)
+        return result
+
     def _do_undo(self):
         if not self._ops_undo: return
-        import copy
         # Save current state to redo
         current = {
             "desc": "",
-            "ops": copy.deepcopy(self._effect_ops),
+            "ops": self._copy_ops(self._effect_ops),
             "base_audio": self._base_audio.copy() if self._base_audio is not None else None,
             "clips": [(c.name, c.audio_data.copy(), c.position, c.color)
                       for c in self.timeline.clips] if self.timeline.clips else [],
@@ -1700,10 +2162,9 @@ class MainWindow(QMainWindow):
 
     def _do_redo(self):
         if not self._ops_redo: return
-        import copy
         current = {
             "desc": "",
-            "ops": copy.deepcopy(self._effect_ops),
+            "ops": self._copy_ops(self._effect_ops),
             "base_audio": self._base_audio.copy() if self._base_audio is not None else None,
             "clips": [(c.name, c.audio_data.copy(), c.position, c.color)
                       for c in self.timeline.clips] if self.timeline.clips else [],
@@ -1731,17 +2192,17 @@ class MainWindow(QMainWindow):
                               position=pos, color=color)
                 self.timeline.clips.append(c)
             self.timeline.sample_rate = self.sample_rate
-        # Re-render audio from base + ops
-        if self._base_audio is not None:
+        # Re-render audio from ops (handles both structural and effect ops)
+        if self._effect_ops:
+            self._render_from_ops()
+        elif self._base_audio is not None:
             self.audio_data = self._base_audio.copy()
-            for op in self._effect_ops:
-                if op.get("enabled", True):
-                    self._apply_single_op(op)
+            self._refresh_all()
         elif clips:
             self._rebuild_audio()
         else:
             self.audio_data = None
-        self._refresh_all()
+            self._refresh_all()
         self._sync_history_chain()
 
     # ══════ Export Stems ══════
@@ -1818,8 +2279,8 @@ class MainWindow(QMainWindow):
     # ══════ Misc ══════
 
     def _record(self):
-        d = RecordDialog(self, output_device=self.playback.output_device)
-        d.recorded.connect(self._on_rec)
+        d = RecordDialog(input_device=self.playback.input_device, parent=self)
+        d.recording_done.connect(self._on_rec)
         d.exec()
 
     def _on_rec(self, data, sr):
@@ -1828,17 +2289,31 @@ class MainWindow(QMainWindow):
         if self.audio_data is None:
             self.audio_data, self.sample_rate = st, sr
             self.timeline.clear()
+            self.timeline.sample_rate = sr
             color = CLIP_COLORS[self._clip_color_idx % len(CLIP_COLORS)]
             self._clip_color_idx += 1
             self.timeline.add_clip(st, sr, name=name, position=0, color=color)
             self._base_audio = st.copy()
+            self._store_initial_state()
         else:
             self._push_undo("Record")
+            # Resample recording to match project sample rate if needed
+            if sr != self.sample_rate and self.sample_rate > 0:
+                from scipy.signal import resample as scipy_resample
+                new_len = int(len(st) * self.sample_rate / sr)
+                if new_len > 0:
+                    channels = []
+                    for ch in range(st.shape[1] if st.ndim > 1 else 1):
+                        ch_data = st[:, ch] if st.ndim > 1 else st
+                        channels.append(scipy_resample(ch_data, new_len))
+                    st = np.column_stack(channels).astype(np.float32)
+                sr = self.sample_rate
             color = CLIP_COLORS[self._clip_color_idx % len(CLIP_COLORS)]
             self._clip_color_idx += 1
             self.timeline.add_clip(st, sr, name=name, color=color)
             self._rebuild_audio()
-            self._base_audio = self.audio_data.copy()
+            self._base_audio = self.audio_data.copy() if self.audio_data is not None else None
+            self._add_structural_op("record", f"🎙 {name}")
         self._refresh_all()
         self._unsaved = True
 
@@ -1846,7 +2321,7 @@ class MainWindow(QMainWindow):
         if self.audio_data is not None:
             self.waveform.set_selection(0, len(self.audio_data))
             dur = format_time(get_duration(self.audio_data, self.sample_rate))
-            self.transport.set_selection_info(f"Sel: {dur}")
+            self.transport.set_selection_info(f"Sel : {dur}")
 
     def _open_manual(self):
         import webbrowser
