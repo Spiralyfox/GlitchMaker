@@ -532,7 +532,7 @@ def export_audio(data: np.ndarray, sr: int, filepath: str, fmt: str = "wav"):
     try:
         download_ffmpeg()
         # Retry now that ffmpeg is available
-        return export_audio(data, sr, filepath)
+        return export_audio(data, sr, filepath, fmt)
     except Exception as _ex:
         _log.debug("Non-critical: %s", _ex)
 

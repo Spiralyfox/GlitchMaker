@@ -20,26 +20,22 @@ class Dialog(_Base):
         super().__init__("Saturation", p)
         self._row("Type"); self.tp = QComboBox(); self.tp.addItems(["soft", "hard", "overdrive"]); self._lo.addWidget(self.tp)
         self.dr = _slider_float(self._lo, "Drive", 0.5, 20, 3.0, 0.5, 1, "", 10)
+        self.tn = _slider_float(self._lo, "Tone", 0, 1, 0.5, 0.05, 2)
         self._finish()
-    def get_params(self): return {"type": self.tp.currentText(), "drive": self.dr.value()}
+    def get_params(self): return {"type": self.tp.currentText(), "drive": self.dr.value(), "tone": self.tn.value()}
     def set_params(self, p):
         idx = self.tp.findText(p.get("type", "soft"))
         if idx >= 0: self.tp.setCurrentIndex(idx)
         self.dr.setValue(p.get("drive", 3.0))
+        self.tn.setValue(p.get("tone", 0.5))
 # ══════════════════════════════════════════════════
 # DSP / Process
 # ══════════════════════════════════════════════════
 
 def process(audio_data, start, end, sr=44100, **kw):
-    result = audio_data.copy()
-    sat_type = kw.get("type", "soft"); drive = kw.get("drive", 3.0)
-    threshold = max(0.01, 1.0 / drive)
-    if sat_type == "hard":
-        result[start:end] = np.clip(result[start:end], -threshold, threshold) / threshold
-    elif sat_type == "overdrive":
-        seg = result[start:end].copy() * drive
-        seg = np.where(seg >= 0, np.tanh(seg), np.tanh(seg * 0.8) * 1.2)
-        result[start:end] = seg
-    else:
-        result[start:end] = np.tanh(result[start:end] * drive)
-    return np.clip(result, -1.0, 1.0)
+    from core.effects.saturation import saturate
+    return saturate(audio_data, start, end,
+                    mode=kw.get("type", "soft"),
+                    drive=kw.get("drive", 3.0),
+                    tone=kw.get("tone", 0.5),
+                    sr=sr)

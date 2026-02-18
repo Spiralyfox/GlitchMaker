@@ -140,15 +140,12 @@ def _w_tape_stop(audio_data, start, end, sr=44100, **kw):
 
 def _w_saturation(audio_data, start, end, sr=44100, **kw):
     """Wrapper : applique l effet Saturation."""
-    from core.effects.saturation import hard_clip, soft_clip, overdrive
-    sat_type = kw.get("type", "soft")
-    drive = kw.get("drive", 3.0)
-    threshold = max(0.01, 1.0 / drive)
-    if sat_type == "hard":
-        return hard_clip(audio_data, start, end, threshold=threshold)
-    elif sat_type == "overdrive":
-        return overdrive(audio_data, start, end, drive=drive)
-    return soft_clip(audio_data, start, end, threshold=threshold)
+    from core.effects.saturation import saturate
+    return saturate(audio_data, start, end,
+                    mode=kw.get("type", "soft"),
+                    drive=kw.get("drive", 3.0),
+                    tone=kw.get("tone", 0.5),
+                    sr=sr)
 
 def _w_distortion(audio_data, start, end, sr=44100, **kw):
     """Wrapper : applique l effet Distortion."""
@@ -263,15 +260,22 @@ def _w_wave_ondulee(audio_data, start, end, sr=44100, **kw):
 
 
 def _w_robot(audio_data, start, end, sr=44100, **kw):
-    """Wrapper : applique l effet Robotic Voice."""
+    """Wrapper : applique l effet Robotic."""
     from core.effects.robot import robot
     return robot(audio_data, start, end, sr=sr,
                  grain_ms=kw.get("grain_ms", 8),
                  robot_amount=kw.get("robot_amount", 0.7),
                  metallic=kw.get("metallic", 0.4),
-                 digital_noise=kw.get("digital_noise", 0.15),
                  monotone=kw.get("monotone", 0.0),
                  pitch_hz=kw.get("pitch_hz", 150))
+
+def _w_digital_noise(audio_data, start, end, sr=44100, **kw):
+    """Wrapper : applique l effet Digital Noise."""
+    from core.effects.digital_noise import digital_noise
+    return digital_noise(audio_data, start, end, sr=sr,
+                         bit_reduction=kw.get("bit_reduction", 0.5),
+                         noise_amount=kw.get("noise_amount", 0.3),
+                         sample_hold=kw.get("sample_hold", 1))
 
 def _w_tape_glitch(audio_data, start, end, sr=44100, **kw):
     """Wrapper : applique l effet Tape Glitch."""
@@ -287,8 +291,8 @@ def _w_tape_glitch(audio_data, start, end, sr=44100, **kw):
 # ═══ Section ordering ═══
 
 SECTION_ORDER = [
-    "Basics", "Pitch & Time", "Distortion",
-    "Modulation", "Space & Texture", "Glitch",
+    "Glitch", "Basics", "Pitch & Time", "Distortion",
+    "Modulation", "Space & Texture",
     "Custom",
 ]
 
@@ -303,7 +307,7 @@ def _define_plugins():
         DelayDialog, VinylDialog, OTTDialog,
         StutterDialog, GranularDialog, ShuffleDialog,
         BufferFreezeDialog, DatamoshDialog,
-        WaveOnduleeDialog, RobotDialog,
+        WaveOnduleeDialog, RobotDialog, DigitalNoiseDialog,
         TapeGlitchDialog,
     )
 
@@ -327,6 +331,7 @@ def _define_plugins():
         ("vinyl",         "V", "#606c38", "Space & Texture", "vinyl",         VinylDialog,        _w_vinyl),
         ("ott",           "O", "#e76f51", "Space & Texture", "ott",           OTTDialog,          _w_ott),
         ("robot",         "R", "#4a00e0", "Space & Texture", "robot",         RobotDialog,        _w_robot),
+        ("digital_noise", "N", "#00c896", "Glitch",          "digital_noise", DigitalNoiseDialog, _w_digital_noise),
         ("stutter",       "S", "#e94560", "Glitch",          "stutter",       StutterDialog,      _w_stutter),
         ("granular",      "G", "#7b2d8e", "Glitch",          "granular",      GranularDialog,     _w_granular),
         ("shuffle",       "S", "#bb3e03", "Glitch",          "shuffle",       ShuffleDialog,      _w_shuffle),

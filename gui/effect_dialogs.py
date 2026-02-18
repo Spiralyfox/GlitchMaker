@@ -123,7 +123,7 @@ class _Base(QDialog):
         self._rnd_btn.setToolTip("Randomize parameters")
         self._rnd_btn.clicked.connect(self._randomize_params)
         r.addWidget(self._rnd_btn)
-        self._pv_btn = _btn("▶ Preview", "#7c3aed")
+        self._pv_btn = _btn("Preview", "#7c3aed")
         self._pv_btn.setFixedWidth(100)
         self._pv_btn.clicked.connect(self._toggle_preview)
         self._pv_btn.setVisible(False)
@@ -166,13 +166,13 @@ class _Base(QDialog):
             worker.start()
         except Exception as ex:
             _log.error("Preview start error: %s", ex)
-            self._pv_btn.setText("▶ Preview"); self._pv_btn.setEnabled(True)
+            self._pv_btn.setText("Preview"); self._pv_btn.setEnabled(True)
 
     def _on_preview_ready(self, result):
         """Callback quand la preview est prete — lance la lecture."""
         self._pv_worker = None
         if result is None:
-            self._pv_btn.setText("▶ Preview"); self._pv_btn.setEnabled(True); return
+            self._pv_btn.setText("Preview"); self._pv_btn.setEnabled(True); return
         try:
             import sounddevice as sd
             audio = np.asarray(result, dtype=np.float32)
@@ -183,7 +183,7 @@ class _Base(QDialog):
             elif audio.ndim > 1 and audio.shape[1] > 2:
                 audio = audio[:, :2]
             if len(audio) == 0:
-                self._pv_btn.setText("▶ Preview"); self._pv_btn.setEnabled(True); return
+                self._pv_btn.setText("Preview"); self._pv_btn.setEnabled(True); return
             # sd.play — simple, reliable, uses the SAME device as main playback
             sd.stop()
             sd.play(audio, samplerate=self._pv_sr, device=self._pv_device)
@@ -197,18 +197,18 @@ class _Base(QDialog):
             self._pv_timer.start(dur_ms)
         except Exception as ex:
             _log.error("Preview playback error: %s", ex)
-            self._pv_btn.setText("▶ Preview"); self._pv_btn.setEnabled(True)
+            self._pv_btn.setText("Preview"); self._pv_btn.setEnabled(True)
             self._pv_playing = False
 
     def _on_preview_done(self):
         """Callback quand la lecture de preview est terminée."""
         self._pv_playing = False
-        self._pv_btn.setText("▶ Preview"); self._pv_btn.setEnabled(True)
+        self._pv_btn.setText("Preview"); self._pv_btn.setEnabled(True)
 
     def _on_preview_error(self, msg):
         """Callback en cas d erreur pendant la preview."""
         self._pv_worker = None
-        self._pv_btn.setText("▶ Preview"); self._pv_btn.setEnabled(True)
+        self._pv_btn.setText("Preview"); self._pv_btn.setEnabled(True)
         _log.error("Preview error: %s", msg)
 
     def _stop_preview(self):
@@ -221,9 +221,9 @@ class _Base(QDialog):
         except Exception: pass
         if self._pv_worker is not None:
             try: self._pv_worker.quit(); self._pv_worker.wait(500)
-            except: pass
+            except Exception: pass
             self._pv_worker = None
-        self._pv_btn.setText("▶ Preview"); self._pv_btn.setEnabled(True)
+        self._pv_btn.setText("Preview"); self._pv_btn.setEnabled(True)
 
     def _randomize_params(self):
         """Randomize all parameter widgets (Step 51).
@@ -341,16 +341,18 @@ class SaturationDialog(_Base):
     def __init__(self, p=None):
         """Initialise les sliders de parametres pour Saturation."""
         super().__init__("Saturation", p)
-        self._row("Type"); self.tp = QComboBox(); self.tp.addItems(["hard", "soft", "overdrive"]); self._lo.addWidget(self.tp)
-        self.dr = _slider_float(self._lo, "Drive", 1, 20, 3, 0.5, 1, "", 10)
+        self._row("Type"); self.tp = QComboBox(); self.tp.addItems(["soft", "hard", "overdrive"]); self._lo.addWidget(self.tp)
+        self.dr = _slider_float(self._lo, "Drive", 0.5, 20, 3.0, 0.5, 1, "", 10)
+        self.tn = _slider_float(self._lo, "Tone", 0, 1, 0.5, 0.05, 2)
         self._finish()
     """Retourne les parametres actuels sous forme de dict."""
-    def get_params(self): return {"type": self.tp.currentText(), "drive": self.dr.value()}
+    def get_params(self): return {"type": self.tp.currentText(), "drive": self.dr.value(), "tone": self.tn.value()}
     def set_params(self, p):
         """Charge les parametres depuis un dict."""
         idx = self.tp.findText(p.get("type", "soft"))
         if idx >= 0: self.tp.setCurrentIndex(idx)
         self.dr.setValue(p.get("drive", 3.0))
+        self.tn.setValue(p.get("tone", 0.5))
 
 class DistortionDialog(_Base):
     def __init__(self, p=None):
@@ -406,14 +408,16 @@ class PhaserDialog(_Base):
         self.rt = _slider_float(self._lo, "Rate (Hz)", 0.05, 10, 0.5, 0.1, 2, " Hz", 100)
         self.dp = _slider_float(self._lo, "Depth", 0, 1, 0.7, 0.1, 2)
         self.st = _slider_int(self._lo, "Stages", 1, 12, 4)
+        self.fb = _slider_float(self._lo, "Feedback", 0, 0.95, 0.3, 0.05, 2)
         self.mx = _slider_float(self._lo, "Mix", 0, 1, 0.7, 0.1, 2)
         self._finish()
     """Retourne les parametres actuels sous forme de dict."""
-    def get_params(self): return {"rate_hz": self.rt.value(), "depth": self.dp.value(), "stages": self.st.value(), "mix": self.mx.value()}
+    def get_params(self): return {"rate_hz": self.rt.value(), "depth": self.dp.value(), "stages": self.st.value(), "feedback": self.fb.value(), "mix": self.mx.value()}
     def set_params(self, p):
         """Charge les parametres depuis un dict."""
         self.rt.setValue(p.get("rate_hz", 0.5)); self.dp.setValue(p.get("depth", 0.7))
-        self.st.setValue(p.get("stages", 4)); self.mx.setValue(p.get("mix", 0.7))
+        self.st.setValue(p.get("stages", 4)); self.fb.setValue(p.get("feedback", 0.3))
+        self.mx.setValue(p.get("mix", 0.7))
 
 class TremoloDialog(_Base):
     def __init__(self, p=None):
@@ -634,12 +638,11 @@ class WaveOnduleeDialog(_Base):
 
 class RobotDialog(_Base):
     def __init__(self, p=None):
-        """Initialise les sliders de parametres pour Robot."""
-        super().__init__("Robotic Voice", p)
+        """Initialise les sliders de parametres pour Robotic."""
+        super().__init__("Robotic", p)
         self.gms = _slider_int(self._lo, "Grain size (ms)", 1, 100, 8, " ms")
         self.amt = _slider_float(self._lo, "Robotize", 0.0, 1.0, 0.7, 0.1, 2)
         self.met = _slider_float(self._lo, "Metallic", 0.0, 1.0, 0.4, 0.1, 2)
-        self.dig = _slider_float(self._lo, "Digital Noise", 0.0, 1.0, 0.15, 0.05, 2)
         self.hz = _slider_int(self._lo, "Base Pitch (Hz)", 50, 2000, 150, " Hz")
         self.mn = QCheckBox("Monotone (Force Pitch)"); self._lo.addWidget(self.mn)
         self._finish()
@@ -647,7 +650,7 @@ class RobotDialog(_Base):
     def get_params(self):
         """Retourne les parametres actuels sous forme de dict."""
         return {"grain_ms": self.gms.value(), "robot_amount": self.amt.value(),
-                "metallic": self.met.value(), "digital_noise": self.dig.value(),
+                "metallic": self.met.value(),
                 "pitch_hz": self.hz.value(), "monotone": 1.0 if self.mn.isChecked() else 0.0}
 
     def set_params(self, p):
@@ -655,9 +658,29 @@ class RobotDialog(_Base):
         self.gms.setValue(int(p.get("grain_ms", 8)))
         self.amt.setValue(p.get("robot_amount", 0.7))
         self.met.setValue(p.get("metallic", 0.4))
-        self.dig.setValue(p.get("digital_noise", 0.15))
         self.hz.setValue(int(p.get("pitch_hz", 150)))
         self.mn.setChecked(bool(p.get("monotone", 0.0)))
+
+
+class DigitalNoiseDialog(_Base):
+    def __init__(self, p=None):
+        """Initialise les sliders de parametres pour Digital Noise."""
+        super().__init__("Digital Noise", p)
+        self.br = _slider_float(self._lo, "Bit Reduction", 0.0, 1.0, 0.5, 0.05, 2)
+        self.na = _slider_float(self._lo, "Noise Amount", 0.0, 1.0, 0.3, 0.05, 2)
+        self.sh = _slider_int(self._lo, "Sample Hold", 1, 32, 1)
+        self._finish()
+
+    def get_params(self):
+        """Retourne les parametres actuels sous forme de dict."""
+        return {"bit_reduction": self.br.value(), "noise_amount": self.na.value(),
+                "sample_hold": self.sh.value()}
+
+    def set_params(self, p):
+        """Charge les parametres depuis un dict."""
+        self.br.setValue(p.get("bit_reduction", 0.5))
+        self.na.setValue(p.get("noise_amount", 0.3))
+        self.sh.setValue(int(p.get("sample_hold", 1)))
 
 
 class TapeGlitchDialog(_Base):

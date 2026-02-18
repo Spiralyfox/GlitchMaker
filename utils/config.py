@@ -2,7 +2,7 @@
 import os, sys, json, shutil
 
 APP_NAME = "Glitch Maker"
-APP_VERSION = "8.1"
+APP_VERSION = "8.3"
 WINDOW_MIN_WIDTH = 1050
 WINDOW_MIN_HEIGHT = 650
 RECORDING_SAMPLE_RATE = 44100

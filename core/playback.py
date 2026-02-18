@@ -82,7 +82,7 @@ class PlaybackEngine:
                 _log.debug("Stream config failed (dev=%s bs=%d lat=%s): %s", dev, bs, lat, e)
                 if self._stream:
                     try: self._stream.close()
-                    except: pass
+                    except Exception: pass
                     self._stream = None
 
         _log.error("All stream configs failed")

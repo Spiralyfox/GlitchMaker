@@ -117,7 +117,7 @@
 
     <p>The interface is split into three columns:</p>
 
-    <p><b>Left Panel — Effects</b>: lists all 25 available effects organised by category. Search bar to filter, star to
+    <p><b>Left Panel — Effects</b>: lists all 26 available effects organised by category. Search bar to filter, star to
         mark favourites. Toggle between effects view (FX) and presets view (PR).</p>
 
     <p><b>Centre — Waveform &amp; Timeline</b>: the main workspace. At the top, the audio waveform with selection,
@@ -360,9 +360,9 @@
     <!-- ── Distortion ── -->
     <h3>🔥 Distortion</h3>
 
-    <p><b>Saturation</b> — Warm harmonic distortion. Parameter: drive.</p>
-    <div class="audio-desc">🔊 Light = vintage tube amp warmth. Heavy = thick, fuzzy, aggressive — clean guitar turned
-        grunge roar.</div>
+    <p><b>Saturation</b> — Harmonic distortion. Parameters: mode (Soft / Hard / Overdrive), drive, tone.</p>
+    <div class="audio-desc">🔊 Soft = warm arctangent saturation. Hard = brutal asymmetric clipping. Overdrive =
+        tube-style compression. Tone controls brightness.</div>
 
     <p><b>Distortion</b> — Hard clipping. Parameters: drive, tone.</p>
     <div class="audio-desc">🔊 Crunchy, sizzling texture. Extreme = aggressive noise wall. Great for explosive drums or
@@ -379,9 +379,10 @@
     <div class="audio-desc">🔊 Illusion of multiple voices playing together. Light = subtle thickening. Heavy = watery,
         swirling texture.</div>
 
-    <p><b>Phaser</b> — Sweeping notch filters. Parameters: speed, depth, stages.</p>
-    <div class="audio-desc">🔊 Jet flyover swoosh. Classic on guitars and synth pads. More stages = more dramatic and
-        spatial.</div>
+    <p><b>Phaser</b> — Sweeping notch filters. Parameters: speed, depth, stages, feedback, mix.</p>
+    <div class="audio-desc">🔊 Jet flyover swoosh. Feedback adds resonance to the sweep. Automatic stereo spread between
+        L and R for a spatial effect.
+    </div>
 
     <p><b>Tremolo</b> — Rapid volume modulation. Parameters: speed (Hz), depth.</p>
     <div class="audio-desc">🔊 2-4 Hz = gentle pulse. 10-20 Hz = machine-gun stutter. Extreme = ring-mod-like buzz.
@@ -395,8 +396,8 @@
     <h3>🌌 Space &amp; Texture</h3>
 
     <p><b>Delay</b> — Repeated echoes. Parameters: time (ms), feedback, mix.</p>
-    <div class="audio-desc">🔊 50-100ms = bathroom slapback. 300-500ms = distinct rhythmic echoes. High feedback =
-        infinite spiral.</div>
+    <div class="audio-desc">🔊 Echo tail blends over the audio that follows the selection. Repetitions fade naturally
+        into the rest of the track.</div>
 
     <p><b>Vinyl</b> — Vinyl record imperfections. Parameters: crackle, wow, noise.</p>
     <div class="audio-desc">🔊 Light = warm old turntable. Heavy = dusty damaged record found in an attic.</div>
@@ -404,8 +405,9 @@
     <p><b>OTT</b> — Multiband compression. Parameters: amount, bands.</p>
     <div class="audio-desc">🔊 Everything louder and punchier. Max = hyper-compressed, electronic music staple.</div>
 
-    <p><b>Robotic Voice</b> — Robotic transformation. Parameters: carrier, formant.</p>
-    <div class="audio-desc">🔊 Flat, metallic robot speech. Instruments gain a synthetic, electronic quality.</div>
+    <p><b>Robotic</b> — Robotic transformation. Parameters: grain size, robotize, metallic, pitch, monotone.</p>
+    <div class="audio-desc">🔊 Granular resynthesis with metallic ring modulation. Small grains = more robotic. Monotone
+        mode flattens pitch.</div>
 
 
     <!-- ── Glitch ── -->
@@ -434,6 +436,11 @@
     <p><b>Tape Glitch</b> — Damaged cassette playback. Parameters: glitch rate, severity.</p>
     <div class="audio-desc">🔊 Light = vintage character. Heavy = tape being eaten — audio stutters, warps and vanishes.
     </div>
+
+    <p><b>Digital Noise</b> — Bit reduction and digital artefacts. Parameters: bit reduction, noise amount, sample hold.
+    </p>
+    <div class="audio-desc">🔊 Degrades audio with quantisation, sample-and-hold aliasing and digital noise. Creates
+        lo-fi, broken textures.</div>
 
     <!-- ═══════════════════════════════════ -->
     <h2>⭐ Favourites &amp; Presets</h2>

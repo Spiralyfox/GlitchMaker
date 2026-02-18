@@ -1,7 +1,6 @@
 """
-Robot — Robotic granular voice effect.
-Creates a digital, metallic, granular sound.
-Combines micro-grain resynthesis + ring mod + bit reduction.
+Robotic — Granular robotic voice effect.
+Creates a metallic, granular sound via micro-grain resynthesis + ring modulation.
 """
 import numpy as np
 from core.effects.utils import apply_micro_fade
@@ -9,13 +8,12 @@ from core.effects.utils import apply_micro_fade
 
 def robot(audio_data, start, end, sr=44100,
           grain_ms=8, robot_amount=0.7, metallic=0.4,
-          digital_noise=0.15, monotone=0.0, pitch_hz=150):
+          monotone=0.0, pitch_hz=150):
     """
     Robotic voice processing.
-    grain_ms: grain size (smaller = more robotic, 3-30ms)
+    grain_ms: grain size (smaller = more robotic, 3–30 ms)
     robot_amount: overall effect intensity
     metallic: ring modulation amount (metallic resonance)
-    digital_noise: digital artifacts / bit reduction
     monotone: 0.0 = keep pitch variation, 1.0 = flatten to fixed pitch
     pitch_hz: fixed pitch when monotone > 0
     """
@@ -90,19 +88,6 @@ def robot(audio_data, start, end, sr=44100,
             seg = seg * (1.0 - metallic) + seg * ring2d * metallic
         else:
             seg = seg * (1.0 - metallic) + seg * ring * metallic
-
-    # ── 4. Digital noise / bit reduction ──
-    if digital_noise > 0.01:
-        # Bit-depth reduction
-        levels = max(4, int(256 * (1.0 - digital_noise * 0.9)))
-        seg = np.round(seg * levels) / levels
-        # Add subtle digital noise
-        noise_amp = digital_noise * 0.02
-        if is_stereo:
-            noise = np.random.uniform(-noise_amp, noise_amp, seg.shape)
-        else:
-            noise = np.random.uniform(-noise_amp, noise_amp, n)
-        seg = seg + noise
 
     # ── Mix dry/wet ──
     amount = np.clip(robot_amount, 0.0, 1.0)

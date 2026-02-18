@@ -12,13 +12,13 @@ Glitch Maker permet de transformer radicalement un fichier audio en lui appliqua
 
 **Interface complète** — Waveform interactive avec zoom indépendant, timeline multi-clips, minimap de navigation, analyseur de spectre en temps réel, métronome synchronisé avec grille de tempo, et transport complet (Play/Pause/Stop avec boucle automatique).
 
-**25 effets audio** organisés en 6 catégories :
+**26 effets audio** organisés en 6 catégories :
 - **Basics** — Reverse, Volume, Filter, Pan/Stéréo : les outils fondamentaux.
 - **Pitch & Time** — Pitch Shift, Time Stretch, Tape Stop, Pitch Drift : hauteur et vitesse.
-- **Distortion** — Saturation, Distortion, Bitcrusher : écrasement et dégradation volontaire.
-- **Modulation** — Chorus, Phaser, Tremolo, Ring Mod : mouvement et profondeur.
-- **Space & Texture** — Delay, Vinyl, OTT, Robotic Voice : espace, texture et ambiances.
-- **Glitch** — Stutter, Granular, Shuffle, Buffer Freeze, Datamosh, Tape Glitch : effets destructifs et expérimentaux.
+- **Distortion** — Saturation (3 modes : Soft, Hard, Overdrive + Tone), Distortion, Bitcrusher : écrasement et dégradation volontaire.
+- **Modulation** — Chorus, Phaser (feedback + stereo spread), Tremolo, Ring Mod : mouvement et profondeur.
+- **Space & Texture** — Delay (queue mixée sur la suite audio), Vinyl, OTT, Robotic : espace, texture et ambiances.
+- **Glitch** — Stutter, Granular, Shuffle, Buffer Freeze, Datamosh, Tape Glitch, Digital Noise : effets destructifs et expérimentaux.
 
 **Historique complet** — Toutes les actions sont tracées dans le panneau Historique avec icônes et couleurs par type (effets, automations, coupes, fondus, ajouts, enregistrements, suppressions, duplications, réorganisations). Toutes les actions sont activables/désactivables et supprimables individuellement — l'audio est entièrement recalculé depuis l'état initial en rejouant les actions activées dans l'ordre. Le mapping de coordonnées (v7) garantit que les coupes et effets s'appliquent toujours à la bonne zone audio, même quand des opérations antérieures sont désactivées. Annuler/refaire avec Ctrl+Z / Ctrl+Y.
 
@@ -83,13 +83,13 @@ Glitch Maker lets you radically transform an audio file by applying non-destruct
 
 **Complete interface** — Interactive waveform with independent zoom, multi-clip timeline, navigation minimap, real-time spectrum analyser, metronome synchronised with beat grid, and full transport (Play/Pause/Stop with automatic looping).
 
-**25 audio effects** organised in 6 categories:
+**26 audio effects** organised in 6 categories:
 - **Basics** — Reverse, Volume, Filter, Pan/Stereo: fundamental tools.
 - **Pitch & Time** — Pitch Shift, Time Stretch, Tape Stop, Pitch Drift: pitch and speed.
-- **Distortion** — Saturation, Distortion, Bitcrusher: crushing and deliberate degradation.
-- **Modulation** — Chorus, Phaser, Tremolo, Ring Mod: movement and depth.
-- **Space & Texture** — Delay, Vinyl, OTT, Robotic Voice: space, texture and atmospheres.
-- **Glitch** — Stutter, Granular, Shuffle, Buffer Freeze, Datamosh, Tape Glitch: destructive and experimental effects.
+- **Distortion** — Saturation (3 modes: Soft, Hard, Overdrive + Tone), Distortion, Bitcrusher: crushing and deliberate degradation.
+- **Modulation** — Chorus, Phaser (feedback + stereo spread), Tremolo, Ring Mod: movement and depth.
+- **Space & Texture** — Delay (echo tail blends with following audio), Vinyl, OTT, Robotic: space, texture and atmospheres.
+- **Glitch** — Stutter, Granular, Shuffle, Buffer Freeze, Datamosh, Tape Glitch, Digital Noise: destructive and experimental effects.
 
 **Full history** — All actions are tracked in the History panel with icons and colours by type (effects, automations, cuts, fades, additions, recordings, deletions, duplications, reorders). All actions can be toggled on/off and deleted individually — audio is fully recalculated from the initial state by replaying enabled actions in order. Coordinate mapping (v7) ensures cuts and effects always apply to the correct audio region, even when earlier operations are disabled. Undo/redo with Ctrl+Z / Ctrl+Y.
 

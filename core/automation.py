@@ -12,7 +12,8 @@ AUTOMATABLE_PARAMS = {
                    ("resonance", "Resonance",       0.1, 20,    1.0,   0.1)],
     "pan":        [("pan",       "Pan",            -1.0, 1.0,   0.0,   0.01)],
     "pitch_shift":[("semitones", "Semitones",      -24,  24,    0,     0.5)],
-    "saturation": [("drive",     "Drive",           0,   100,   20,    1)],
+    "saturation": [("drive",     "Drive",           0,   100,   20,    1),
+                   ("tone",      "Tone",            0,   100,   50,    1)],
     "distortion": [("drive",     "Drive",           0,   100,   50,    1),
                    ("tone",      "Tone",            0,   100,   50,    1)],
     "bitcrusher": [("bit_depth", "Bit Depth",       2,   16,    16,    1),
@@ -22,6 +23,7 @@ AUTOMATABLE_PARAMS = {
                    ("mix",       "Mix",             0,   1,     0.5,   0.01)],
     "phaser":     [("rate_hz",   "Rate (Hz)",       0.05, 5,    0.5,   0.05),
                    ("depth",     "Depth",           0,   1,     0.5,   0.01),
+                   ("feedback",  "Feedback",        0,   0.95,  0.3,   0.05),
                    ("mix",       "Mix",             0,   1,     0.5,   0.01)],
     "tremolo":    [("rate_hz",   "Rate (Hz)",       0.5, 30,    5,     0.5),
                    ("depth",     "Depth",           0,   1,     0.7,   0.01)],
@@ -36,6 +38,8 @@ AUTOMATABLE_PARAMS = {
     "granular":   [("grain_ms",  "Grain (ms)",      5,   200,   50,    1),
                    ("density",   "Density",         0.1, 10,    2,     0.1),
                    ("chaos",     "Chaos",           0,   1,     0.3,   0.01)],
+    "digital_noise": [("bit_reduction", "Bit Reduction", 0, 1, 0.5, 0.01),
+                      ("noise_amount",  "Noise Amount",  0, 1, 0.3, 0.01)],
 }
 
 

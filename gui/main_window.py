@@ -659,8 +659,7 @@ class MainWindow(QMainWindow):
     def _on_bpm_changed(self, val):
         self.playback.bpm = val
         if self.playback.metronome_on:
-            self.playback.toggle_metronome(val)
-            self.playback.toggle_metronome(val)
+            self.playback.bpm = val
         if self.waveform.grid_subdivisions > 0:
             self.waveform.bpm = val
             self.waveform.update()
@@ -1315,7 +1314,7 @@ class MainWindow(QMainWindow):
         if not op.get("enabled", True) or self.audio_data is None:
             return
         if op.get("type") == "automation":
-            self._render_auto_op()
+            self._render_auto_op(op)
             self._update_clips_from_audio()
             self._refresh_all()
             return
@@ -1326,20 +1325,27 @@ class MainWindow(QMainWindow):
         s = max(0, min(s, len(self.audio_data)))
         e = max(s, min(e, len(self.audio_data)))
         if e - s < 1: return
-        segment = self.audio_data[s:e].copy()
         try:
-            mod = plugin.process_fn(segment, 0, len(segment),
-                                    sr=self.sample_rate, **op.get("params", {}))
-            if mod is None: return
-            if mod.dtype != np.float32:
-                mod = mod.astype(np.float32)
-            if len(mod) == (e - s):
-                self.audio_data[s:e] = mod
+            # Delay needs the full audio to mix the echo tail over following content
+            if op["effect_id"] == "delay":
+                mod = plugin.process_fn(self.audio_data, s, e,
+                                        sr=self.sample_rate, **op.get("params", {}))
+                if mod is None: return
+                self.audio_data = mod.astype(np.float32)
             else:
-                before = self.audio_data[:s]
-                after = self.audio_data[e:]
-                parts = [p for p in [before, mod, after] if len(p) > 0]
-                self.audio_data = np.concatenate(parts, axis=0).astype(np.float32)
+                segment = self.audio_data[s:e].copy()
+                mod = plugin.process_fn(segment, 0, len(segment),
+                                        sr=self.sample_rate, **op.get("params", {}))
+                if mod is None: return
+                if mod.dtype != np.float32:
+                    mod = mod.astype(np.float32)
+                if len(mod) == (e - s):
+                    self.audio_data[s:e] = mod
+                else:
+                    before = self.audio_data[:s]
+                    after = self.audio_data[e:]
+                    parts = [p for p in [before, mod, after] if len(p) > 0]
+                    self.audio_data = np.concatenate(parts, axis=0).astype(np.float32)
             self._update_clips_from_audio()
             self._refresh_all()
         except Exception as ex:
@@ -1427,21 +1433,29 @@ class MainWindow(QMainWindow):
                 e = max(s, min(e, len(self.audio_data)))
             if e - s < 1:
                 continue
-            segment = self.audio_data[s:e].copy()
             try:
-                mod = plugin.process_fn(segment, 0, len(segment),
-                                        sr=self.sample_rate, **op.get("params", {}))
-                if mod is None:
-                    continue
-                if mod.dtype != np.float32:
-                    mod = mod.astype(np.float32)
-                if len(mod) == (e - s):
-                    self.audio_data[s:e] = mod
+                # Delay needs the full audio to mix the echo tail over following content
+                if op.get("effect_id") == "delay":
+                    mod = plugin.process_fn(self.audio_data, s, e,
+                                            sr=self.sample_rate, **op.get("params", {}))
+                    if mod is None:
+                        continue
+                    self.audio_data = mod.astype(np.float32)
                 else:
-                    before = self.audio_data[:s]
-                    after = self.audio_data[e:]
-                    parts = [p for p in [before, mod, after] if len(p) > 0]
-                    self.audio_data = np.concatenate(parts, axis=0).astype(np.float32)
+                    segment = self.audio_data[s:e].copy()
+                    mod = plugin.process_fn(segment, 0, len(segment),
+                                            sr=self.sample_rate, **op.get("params", {}))
+                    if mod is None:
+                        continue
+                    if mod.dtype != np.float32:
+                        mod = mod.astype(np.float32)
+                    if len(mod) == (e - s):
+                        self.audio_data[s:e] = mod
+                    else:
+                        before = self.audio_data[:s]
+                        after = self.audio_data[e:]
+                        parts = [p for p in [before, mod, after] if len(p) > 0]
+                        self.audio_data = np.concatenate(parts, axis=0).astype(np.float32)
                 # Sync modified audio back to clips so next structural op sees changes
                 self._update_clips_from_audio()
             except Exception as ex:
@@ -1914,14 +1928,14 @@ class MainWindow(QMainWindow):
         clip = clips[idx]
         if local_pos <= 0 or local_pos >= clip.duration_samples:
             return False
-        d1 = clip.audio_data[:local]
-        d2 = clip.audio_data[local:]
+        d1 = clip.audio_data[:local_pos]
+        d2 = clip.audio_data[local_pos:]
         c1 = AudioClip(name=f"{clip.name}_L", audio_data=d1,
                         sample_rate=self.sample_rate, position=clip.position,
                         color=_generate_distinct_color(self.timeline._color_counter))
         self.timeline._color_counter += 1
         c2 = AudioClip(name=f"{clip.name}_R", audio_data=d2,
-                        sample_rate=self.sample_rate, position=clip.position + local,
+                        sample_rate=self.sample_rate, position=clip.position + local_pos,
                         color=_generate_distinct_color(self.timeline._color_counter))
         self.timeline._color_counter += 1
         clips[idx:idx+1] = [c1, c2]
@@ -2714,31 +2728,52 @@ class MainWindow(QMainWindow):
 
     def _do_undo(self):
         if not self._ops_undo: return
+        snapshot = self._ops_undo.pop()
         try:
-            # Save current state to redo
             current = {
-                "desc": self._ops_undo[-1].get("desc", ""), # Description of the state we are undoing TO
+                "desc": snapshot.get("desc", ""),
                 "ops": self._copy_ops(self._effect_ops),
                 "base_audio": self._base_audio.copy() if self._base_audio is not None else None,
                 "clips": [(c.name, c.audio_data.copy(), c.position, c.color)
                           for c in self.timeline.clips] if self.timeline.clips else [],
             }
-            self._ops_redo.append(current)
-
-            # Restore from undo
-            snapshot = self._ops_undo.pop()
+        except Exception as e:
+            _log.error("Undo: failed to capture current state: %s", e)
+            self._ops_undo.append(snapshot)
+            return
+        try:
             _log.info("Action: Undo '%s'", snapshot.get("desc", ""))
             self._restore_snapshot(snapshot)
+            self._ops_redo.append(current)
             self.statusBar().showMessage(t("status.undo"))
-            self._update_undo_labels()
         except Exception as e:
-            _log.error("Error during undo: %s", e)
+            _log.error("Undo restore failed, rolling back: %s", e)
+            self._ops_undo.append(snapshot)
+        self._update_undo_labels()
 
     def _do_redo(self):
         if not self._ops_redo: return
         snapshot = self._ops_redo.pop()
-        self._restore_snapshot(snapshot)
-        self.statusBar().showMessage(t("status.redo"))
+        try:
+            current = {
+                "desc": snapshot.get("desc", ""),
+                "ops": self._copy_ops(self._effect_ops),
+                "base_audio": self._base_audio.copy() if self._base_audio is not None else None,
+                "clips": [(c.name, c.audio_data.copy(), c.position, c.color)
+                          for c in self.timeline.clips] if self.timeline.clips else [],
+            }
+        except Exception as e:
+            _log.error("Redo: failed to capture current state: %s", e)
+            self._ops_redo.append(snapshot)
+            return
+        try:
+            _log.info("Action: Redo '%s'", snapshot.get("desc", ""))
+            self._restore_snapshot(snapshot)
+            self._ops_undo.append(current)
+            self.statusBar().showMessage(t("status.redo"))
+        except Exception as e:
+            _log.error("Redo restore failed, rolling back: %s", e)
+            self._ops_redo.append(snapshot)
         self._update_undo_labels()
 
     def _restore_snapshot(self, snapshot):
@@ -2812,7 +2847,9 @@ class MainWindow(QMainWindow):
         if d.exec() == d.DialogCode.Accepted:
             if d.selected_language != get_language():
                 set_language(d.selected_language)
-                save_settings({"language": d.selected_language})
+                s = load_settings()
+                s["language"] = d.selected_language
+                save_settings(s)
                 self._build_menus()
                 QMessageBox.information(self, APP_NAME, t("settings.restart"))
 
@@ -2821,7 +2858,9 @@ class MainWindow(QMainWindow):
         if d.exec() == d.DialogCode.Accepted:
             if d.selected_theme != get_theme():
                 set_theme(d.selected_theme)
-                save_settings({"theme": d.selected_theme})
+                s = load_settings()
+                s["theme"] = d.selected_theme
+                save_settings(s)
                 QMessageBox.information(self, APP_NAME, t("settings.restart"))
 
     def _import_effect(self):
@@ -2936,5 +2975,5 @@ class MainWindow(QMainWindow):
                 self._save()
             elif r == QMessageBox.StandardButton.Cancel:
                 e.ignore(); return
-        self.playback.stop()
+        self.playback.cleanup()
         e.accept()
